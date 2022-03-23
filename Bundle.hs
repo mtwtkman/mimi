@@ -73,6 +73,7 @@ main :: IO ()
 main = do
     setup
     buildStylesheet
+    putStrLn $ "Minifized " ++ stylesheet ++ "(-> " ++ minifiedStyleSheet ++")"
     appjsdef <- readAppJavascript
     initjsdef <- readInitJavascript
     build appjsdef initjsdef
