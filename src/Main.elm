@@ -110,7 +110,12 @@ view model =
             ]
         , div
             [ class "file-drag-area"
-            , class <| if model.hover then "drag-on"  else "drag-off"
+            , class <|
+                if model.hover then
+                    "drag-on"
+
+                else
+                    "drag-off"
             , hijackOn "dragenter" (D.succeed DragEnter)
             , hijackOn "dragover" (D.succeed DragEnter)
             , hijackOn "dragleave" (D.succeed DragLeave)

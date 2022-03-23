@@ -1,7 +1,11 @@
 module AudioPlayer exposing
     ( Error
     , ErrorCategory(..)
+    , ErrorMemory
+    , ErrorMemoryKey
     , ErrorMsg(..)
+    , InvalidPlaybackRate(..)
+    , InvalidVolume(..)
     , Model
     , Msg(..)
     , Source
@@ -10,9 +14,7 @@ module AudioPlayer exposing
     , recordError
     , resolveError
     , toErrorMemoryKey
-    , ErrorMemoryKey
     , update
-    , ErrorMemory
     , view
     )
 
@@ -360,7 +362,6 @@ update msg model =
 
                         InvalidVolume a ->
                             let
-
                                 ( error, subMsg ) =
                                     handleError (VolumeError a)
                             in
@@ -368,7 +369,6 @@ update msg model =
 
                 Nothing ->
                     let
-
                         ( error, subMsg ) =
                             handleError (InvalidVolumeInputValueError value)
                     in
