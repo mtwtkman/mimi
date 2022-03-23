@@ -42,12 +42,10 @@ isPlaying state =
     state == Playing
 
 
-type alias Volume =
-    { value : Int }
+type alias Volume = Int
 
 
-type alias PlaybackRate =
-    { value : Float }
+type alias PlaybackRate = Float
 
 
 type alias Section =
@@ -56,57 +54,12 @@ type alias Section =
     }
 
 
-type alias CurrentTime =
-    { value : Float }
+type alias CurrentTime = Float
 
 
 validateRange : comparable -> comparable -> comparable -> Bool
 validateRange minV maxV v =
     minV <= v && v <= maxV
-
-
-validateVolume : Volume -> VolumeValidationResult
-validateVolume v =
-    if v.value < 0 then
-        InvalidVolume UnderflowVolume
-
-    else if v.value > 100 then
-        InvalidVolume OverflowVolume
-
-    else
-        ValidVolume
-
-
-type InvalidVolume
-    = OverflowVolume
-    | UnderflowVolume
-
-
-type VolumeValidationResult
-    = ValidVolume
-    | InvalidVolume InvalidVolume
-
-
-validatePlaybackRate : PlaybackRate -> PlaybackRateValidationResult
-validatePlaybackRate v =
-    if v.value < 0.0 then
-        InvalidPlaybackRate UnderflowPlaybackRate
-
-    else if v.value > 2.0 then
-        InvalidPlaybackRate OverflowPlaybackRate
-
-    else
-        ValidPlaybackRate
-
-
-type InvalidPlaybackRate
-    = OverflowPlaybackRate
-    | UnderflowPlaybackRate
-
-
-type PlaybackRateValidationResult
-    = ValidPlaybackRate
-    | InvalidPlaybackRate InvalidPlaybackRate
 
 
 validateSection : Float -> Section -> Bool
@@ -134,10 +87,10 @@ initModel name url =
         Paused
         Nothing
         (initSource name url)
-        (PlaybackRate 1.0)
+        1.0
         False
-        (Volume 30)
-        (CurrentTime 0.0)
+        30
+        0.0
 
 
 type SectionMsg
@@ -228,7 +181,7 @@ update msg model =
         ChangeVolume v ->
             case String.toInt v of
                 Just volume ->
-                    ( { model | volume = Volume volume }, changeVolume () )
+                    ( { model | volume = volume }, changeVolume () )
 
                 Nothing ->
                     ( model, Cmd.none )
@@ -237,10 +190,10 @@ update msg model =
             ( model, updateCurrentTime () )
 
         GotCurrentTime t ->
-            ( { model | currentTime = CurrentTime t }, Cmd.none )
+            ( { model | currentTime = t }, Cmd.none )
 
         GotCurrentVolume v ->
-            ( { model | volume = Volume v }, Cmd.none )
+            ( { model | volume = v }, Cmd.none )
 
         _ ->
             ( model, Cmd.none )
@@ -331,7 +284,7 @@ playbackRateSettingForm model =
         , type_ "number"
         , Attr.min "0.0"
         , Attr.max "0.2"
-        , value (String.fromFloat model.playbackRate.value)
+        , value (String.fromFloat model.playbackRate)
         ]
         []
 
@@ -342,13 +295,13 @@ volumeSlider model =
         [ input
             [ class "audio-volume-slider"
             , type_ "range"
-            , value (String.fromInt model.volume.value)
+            , value (String.fromInt model.volume)
             , Attr.max "100"
             , Attr.min "0"
             , onInput ChangeVolume
             ]
             []
-        , text <| String.fromInt model.volume.value
+        , text <| String.fromInt model.volume
         ]
 
 
