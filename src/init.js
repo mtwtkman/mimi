@@ -30,41 +30,12 @@ const pause = () => {
   dom.pause();
 };
 
-const setupVolumeEventHandler = app => {
-  const updateVolume = (sliderDom, mousePositionX) => {
-    const sliderWidth = sliderDom.clientWidth;
-    const volumeMaxValue = parseInt(sliderDom.getAttribute("max"));
-    const value =  mousePositionX * volumeMaxValue / sliderWidth;
-    sliderDom.value = value;
-    return value;
-  };
-  const handler = sliderDom => {
-    let isClicked = false;
-    return clickState => e => {
-      isClicked = clickState(isClicked);
-      if (!isClicked) return;
-      const currentVolume = updateVolume(sliderDom, e.offsetX);
-      app.ports.currentVolumeReciever.send(currentVolume);
-    };
-  };
-  const dom = getVolumeSliderElement();
-  const handle = handler(dom);
-  dom.addEventListener("mousedown", handle(_ => true), false);
-  dom.addEventListener("mousemove", handle(x => x), false)
-  dom.addEventListener("mouseup", handle(_ => false), false)
-  dom.addEventListener("mouseleave", handle(_ => false), false)
-};
-
-const setupAudioNode = app => defaultVolume => {
-  const dom = getAudioPlayerElement();
-  dom.volume = defaultVolume / 100.0;
-  setupVolumeEventHandler(app);
-};
-
-const changeVolume = value => {
+const changeVolume = app => () => {
   const dom = getAudioPlayerElement();
   const volumeSlider = findDom(".audio-volume-slider");
+  const value = parseInt(volumeSlider.value);
   dom.volume = value / 100.0;
+  app.ports.currentVolumeReciever.send(value);
 };
 
 const setPlaybackRate = value => {
@@ -76,9 +47,12 @@ const initializeApp = region => {
   const app = Elm.Main.init({ node: region });
   app.ports.play.subscribe(play);
   app.ports.pause.subscribe(pause);
-  app.ports.spawnAudioNode.subscribe(setupAudioNode(app));
-  // app.ports.setCurrentTime.subscribe(updateCurrentTime);
+  const changeVolumeHandler = changeVolume(app);
+  app.ports.touchVolumeSlider.subscribe(changeVolumeHandler);
+  app.ports.moveVolumeSlider.subscribe(changeVolumeHandler);
+  app.ports.untouchVolumeSlider.subscribe(changeVolumeHandler);
   app.ports.changeVolume.subscribe(changeVolume);
+  // app.ports.setCurrentTime.subscribe(updateCurrentTime);
   //app.ports.currentTimeReciever.send(getCurrentTime());
 };
 

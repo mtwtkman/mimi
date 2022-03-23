@@ -94,19 +94,22 @@ update msg model =
 
 view : Model -> Document Msg
 view model =
-    { title = "mediaplayer"
+    { title = "mimi"
     , body =
-        [ div []
-            [ button [ onClick OpenFileSelector ] [ text "select file" ]
+        [ div
+            [ class "audio-player-region"
             ]
-        , div
-            []
             [ case model.audioPlayer of
                 Just apModel ->
                     Html.map GotAudioPlayerMsg (AP.view apModel)
 
                 Nothing ->
                     span [] []
+            ]
+        , div
+            [ class "file-selector"
+            ]
+            [ button [ onClick OpenFileSelector ] [ text "select file" ]
             ]
         , div
             [ class "file-drag-area"

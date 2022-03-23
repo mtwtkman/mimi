@@ -4,19 +4,17 @@
 }
 
 .drag-on {
-    background: green;
+    background: #336ff0;
 }
 
 .drag-off {
-    background: gray;
+    background: #cacaca;
 }
 
 .error-messages {
-    color: rgb(141, 21, 21);
+    color: #8d1515;
 }
 
 .audio-volume-slider {
-    height: 10px;
-    border: none;
     width: 100px;
 }

@@ -19,9 +19,9 @@ module AudioPlayer exposing
     )
 
 import Dict
-import Html exposing (Attribute, Html, audio, br, div, i, input, text, progress)
+import Html exposing (Attribute, Html, audio, br, div, i, input, text)
 import Html.Attributes as Attr exposing (class, controls, src, type_, value)
-import Html.Events exposing (on, onClick)
+import Html.Events exposing (on, onClick, onMouseDown, onMouseLeave, onMouseUp)
 import Json.Decode as D
 import List
 import Ports exposing
@@ -29,7 +29,9 @@ import Ports exposing
     , play
     , changeVolume
     , updateCurrentTime
-    , spawnAudioNode
+    , touchVolumeSlider
+    , moveVolumeSlider
+    , untouchVolumeSlider
     )
 
 
@@ -214,6 +216,9 @@ type Msg
     | GotCurrentTime Float
     | GotErrorMsg ErrorMsg
     | GotCurrentVolume Int
+    | TouchedVolumeSlider
+    | MovedVolumeSlider
+    | UntouchedVolumeSlider
 
 
 handleError : ErrorMsg -> ( Error, Cmd msg )
@@ -340,7 +345,7 @@ update msg model =
                 section =
                     Section 0.0 duration
             in
-            ( { model | source = newSource, section = Just section }, spawnAudioNode model.volume.value )
+            ( { model | source = newSource, section = Just section }, Cmd.none )
 
         GotSectionMsg sectionMsg ->
             case ( model.source.duration, model.section ) of
@@ -365,6 +370,15 @@ update msg model =
 
         GotCurrentVolume v ->
             ( { model | volume = Volume v }, Cmd.none )
+
+        TouchedVolumeSlider ->
+            ( model, touchVolumeSlider () )
+
+        MovedVolumeSlider ->
+            ( model, moveVolumeSlider () )
+
+        UntouchedVolumeSlider ->
+            (model, untouchVolumeSlider () )
         _ ->
             ( model, Cmd.none)
 
@@ -374,7 +388,8 @@ view model =
     div
         [ class "audio-player"
         ]
-        [ audioSourceView model.source
+        [ errorMessageView model.errors
+        , audioSourceView model.source
         , playerWrapperView model
         , sourceInfoView model.source
         ]
@@ -469,12 +484,16 @@ playbackRateSettingForm model =
 volumeSlider : Model -> Html Msg
 volumeSlider model =
     div []
-        [ progress
+        [ input
             [ class "audio-volume-slider"
+            , type_ "range"
             , value (String.fromInt model.volume.value)
             , Attr.max "100"
             , Attr.min "0"
-            , onClick ChangeVolume
+            , onMousemove
+            , onMouseDown TouchedVolumeSlider
+            , onMouseUp UntouchedVolumeSlider
+            , onMouseLeave UntouchedVolumeSlider
             ]
             []
         , text <| String.fromInt model.volume.value
@@ -484,3 +503,7 @@ volumeSlider model =
 onLoadedData : Attribute Msg
 onLoadedData =
     on "loadeddata" (D.map LoadedData (D.at [ "target", "duration" ] D.float))
+
+onMousemove : Attribute Msg
+onMousemove =
+    on "mousemove" (D.succeed MovedVolumeSlider)

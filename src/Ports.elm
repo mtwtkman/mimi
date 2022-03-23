@@ -18,7 +18,11 @@ port changePlaybackRate : Float -> Cmd msg
 port updateCurrentTime : () -> Cmd msg
 
 
-port spawnAudioNode : Int -> Cmd msg
+port touchVolumeSlider : () -> Cmd msg
+
+port moveVolumeSlider : () -> Cmd msg
+
+port untouchVolumeSlider : () -> Cmd msg
 
 -- SUBSCRIPTIONS
 
