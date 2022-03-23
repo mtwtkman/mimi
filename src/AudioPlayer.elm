@@ -21,7 +21,7 @@ module AudioPlayer exposing
 import Dict
 import Html exposing (Attribute, Html, audio, br, div, i, input, text)
 import Html.Attributes as Attr exposing (class, controls, src, type_, value)
-import Html.Events exposing (on, onClick, onMouseDown, onMouseLeave, onMouseUp)
+import Html.Events exposing (on, onClick, onInput)
 import Json.Decode as D
 import List
 import Ports exposing
@@ -29,9 +29,6 @@ import Ports exposing
     , play
     , changeVolume
     , updateCurrentTime
-    , touchVolumeSlider
-    , moveVolumeSlider
-    , untouchVolumeSlider
     )
 
 
@@ -210,7 +207,7 @@ type Msg
     = Toggle
     | LoadedData Float
     | GotSectionMsg SectionMsg
-    | ChangeVolume
+    | ChangeVolume String
     | SetplaybackRate String
     | ClickedProgressBar
     | GotCurrentTime Float
@@ -359,8 +356,12 @@ update msg model =
                 _ ->
                     ( model, Cmd.none )
 
-        ChangeVolume ->
-            ( model, changeVolume model.volume.value)
+        ChangeVolume v ->
+            case String.toInt v of
+                Just volume ->
+                    ( { model | volume = Volume volume }, changeVolume ())
+                Nothing ->
+                    ( model, Cmd.none )
 
         ClickedProgressBar ->
             ( model, updateCurrentTime () )
@@ -371,14 +372,6 @@ update msg model =
         GotCurrentVolume v ->
             ( { model | volume = Volume v }, Cmd.none )
 
-        TouchedVolumeSlider ->
-            ( model, touchVolumeSlider () )
-
-        MovedVolumeSlider ->
-            ( model, moveVolumeSlider () )
-
-        UntouchedVolumeSlider ->
-            (model, untouchVolumeSlider () )
         _ ->
             ( model, Cmd.none)
 
@@ -490,10 +483,7 @@ volumeSlider model =
             , value (String.fromInt model.volume.value)
             , Attr.max "100"
             , Attr.min "0"
-            , onMousemove
-            , onMouseDown TouchedVolumeSlider
-            , onMouseUp UntouchedVolumeSlider
-            , onMouseLeave UntouchedVolumeSlider
+            , onInput ChangeVolume
             ]
             []
         , text <| String.fromInt model.volume.value
@@ -503,7 +493,3 @@ volumeSlider model =
 onLoadedData : Attribute Msg
 onLoadedData =
     on "loadeddata" (D.map LoadedData (D.at [ "target", "duration" ] D.float))
-
-onMousemove : Attribute Msg
-onMousemove =
-    on "mousemove" (D.succeed MovedVolumeSlider)
