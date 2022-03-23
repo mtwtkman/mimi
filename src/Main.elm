@@ -8,7 +8,7 @@ import Html exposing (Attribute, button, div, span, text)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick, preventDefaultOn)
 import Json.Decode as D
-import Ports exposing (currentTimeReciever)
+import Ports exposing (currentTimeReciever, currentVolumeReciever)
 import Task
 
 
@@ -145,4 +145,5 @@ subscriptions : Model -> Sub Msg
 subscriptions _ =
     Sub.batch
         [ Sub.map GotAudioPlayerMsg (currentTimeReciever AP.GotCurrentTime)
+        , Sub.map GotAudioPlayerMsg (currentVolumeReciever AP.GotCurrentVolume)
         ]

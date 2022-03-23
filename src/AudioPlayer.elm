@@ -19,12 +19,18 @@ module AudioPlayer exposing
     )
 
 import Dict
-import Html exposing (Attribute, Html, audio, br, div, i, input, text)
+import Html exposing (Attribute, Html, audio, br, div, i, input, text, progress)
 import Html.Attributes as Attr exposing (class, controls, src, type_, value)
-import Html.Events exposing (on, onClick, onInput)
+import Html.Events exposing (on, onClick)
 import Json.Decode as D
 import List
-import Ports exposing (pause, play, setVolume, updateCurrentTime)
+import Ports exposing
+    ( pause
+    , play
+    , changeVolume
+    , updateCurrentTime
+    , spawnAudioNode
+    )
 
 
 type alias Source =
@@ -50,7 +56,7 @@ isPlaying state =
 
 
 type alias Volume =
-    { value : Float }
+    { value : Int }
 
 
 type alias PlaybackRate =
@@ -74,10 +80,10 @@ validateRange minV maxV v =
 
 validateVolume : Volume -> VolumeValidationResult
 validateVolume v =
-    if v.value < 0.0 then
+    if v.value < 0 then
         InvalidVolume UnderflowVolume
 
-    else if v.value > 100.0 then
+    else if v.value > 100 then
         InvalidVolume OverflowVolume
 
     else
@@ -158,7 +164,7 @@ initModel name url =
         (initSource name url)
         (PlaybackRate 1.0)
         False
-        (Volume 1.0)
+        (Volume 30)
         (CurrentTime 0.0)
         Dict.empty
 
@@ -202,11 +208,12 @@ type Msg
     = Toggle
     | LoadedData Float
     | GotSectionMsg SectionMsg
-    | SetVolume String
+    | ChangeVolume
     | SetplaybackRate String
     | ClickedProgressBar
     | GotCurrentTime Float
     | GotErrorMsg ErrorMsg
+    | GotCurrentVolume Int
 
 
 handleError : ErrorMsg -> ( Error, Cmd msg )
@@ -333,7 +340,7 @@ update msg model =
                 section =
                     Section 0.0 duration
             in
-            ( { model | source = newSource, section = Just section }, Cmd.none )
+            ( { model | source = newSource, section = Just section }, spawnAudioNode () )
 
         GotSectionMsg sectionMsg ->
             case ( model.source.duration, model.section ) of
@@ -347,32 +354,8 @@ update msg model =
                 _ ->
                     ( model, Cmd.none )
 
-        SetVolume value ->
-            case String.toFloat value of
-                Just v ->
-                    let
-                        volume =
-                            Volume v
-                    in
-                    case validateVolume volume of
-                        ValidVolume ->
-                            ( { model | volume = volume, errors = resolveError model.errors [ DisallowedVolumeValue, MalformedVolumeInputValue ] }
-                            , setVolume volume.value
-                            )
-
-                        InvalidVolume a ->
-                            let
-                                ( error, subMsg ) =
-                                    handleError (VolumeError a)
-                            in
-                            ( { model | errors = recordError model.errors error }, Cmd.map GotErrorMsg subMsg )
-
-                Nothing ->
-                    let
-                        ( error, subMsg ) =
-                            handleError (InvalidVolumeInputValueError value)
-                    in
-                    ( { model | errors = recordError model.errors error }, Cmd.map GotErrorMsg subMsg )
+        ChangeVolume ->
+            ( model, changeVolume ())
 
         ClickedProgressBar ->
             ( model, updateCurrentTime () )
@@ -380,8 +363,10 @@ update msg model =
         GotCurrentTime t ->
             ( { model | currentTime = CurrentTime t }, Cmd.none )
 
+        GotCurrentVolume v ->
+            ( { model | volume = Volume v }, Cmd.none )
         _ ->
-            ( model, Cmd.none )
+            ( model, Cmd.none)
 
 
 view : Model -> Html Msg
@@ -429,6 +414,7 @@ playerControlView model =
         [ class "player-control"
         ]
         [ playIconView model.state
+        , volumeSlider model
         ]
 
 
@@ -460,8 +446,8 @@ playIconView state =
         []
 
 
-progressBarView : Model -> Html Msg
-progressBarView model =
+progressbar : Model -> Html Msg
+progressbar model =
     div
         [ class "progressbar"
         , onClick ClickedProgressBar
@@ -469,16 +455,30 @@ progressBarView model =
         []
 
 
-playbackRateSettingView : Model -> Html Msg
-playbackRateSettingView model =
+playbackRateSettingForm : Model -> Html Msg
+playbackRateSettingForm model =
     input
         [ class "audio-playbackRate"
         , type_ "number"
         , Attr.min "0.0"
         , Attr.max "0.2"
-        , onInput SetVolume
+        , value (String.fromFloat model.playbackRate.value)
         ]
         []
+
+volumeSlider : Model -> Html Msg
+volumeSlider model =
+    div []
+        [ progress
+            [ class "audio-volume-slider"
+            , value (String.fromInt model.volume.value)
+            , Attr.max "100"
+            , Attr.min "0"
+            , onClick ChangeVolume
+            ]
+            []
+        , text <| String.fromInt model.volume.value
+        ]
 
 
 onLoadedData : Attribute Msg

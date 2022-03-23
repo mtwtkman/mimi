@@ -1,19 +1,29 @@
 port module Ports exposing (..)
 
 
+-- PORTS
+
 port play : () -> Cmd msg
 
 
 port pause : () -> Cmd msg
 
 
-port setVolume : Float -> Cmd msg
+port changeVolume : () -> Cmd msg
 
 
-port setSpeed : Float -> Cmd msg
+port changePlaybackRate : Float -> Cmd msg
 
 
 port updateCurrentTime : () -> Cmd msg
 
 
+port spawnAudioNode : () -> Cmd msg
+
+-- SUBSCRIPTIONS
+
+
 port currentTimeReciever : (Float -> msg) -> Sub msg
+
+
+port currentVolumeReciever : (Int -> msg ) -> Sub msg
