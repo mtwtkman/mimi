@@ -1,19 +1,8 @@
 module AudioPlayer exposing
-    ( Error
-    , ErrorCategory(..)
-    , ErrorMemory
-    , ErrorMemoryKey
-    , ErrorMsg(..)
-    , InvalidPlaybackRate(..)
-    , InvalidVolume(..)
-    , Model
+    ( Model
     , Msg(..)
     , Source
-    , errorMsgToErrorCategory
     , initModel
-    , recordError
-    , resolveError
-    , toErrorMemoryKey
     , update
     , view
     )
@@ -129,20 +118,6 @@ validateSection duration section =
         < section.end
 
 
-type alias Error =
-    { reason : ErrorMsg
-    , message : String
-    }
-
-
-type alias ErrorMemoryKey =
-    String
-
-
-type alias ErrorMemory =
-    Dict.Dict ErrorMemoryKey Error
-
-
 type alias Model =
     { state : State
     , section : Maybe Section
@@ -151,7 +126,6 @@ type alias Model =
     , loop : Bool
     , volume : Volume
     , currentTime : CurrentTime
-    , errors : ErrorMemory
     }
 
 
@@ -165,42 +139,11 @@ initModel name url =
         False
         (Volume 30)
         (CurrentTime 0.0)
-        Dict.empty
 
 
 type SectionMsg
     = SetStartPoint Float
     | SetEndPoint Float
-
-
-type ErrorMsg
-    = VolumeError InvalidVolume
-    | PlaybackRateError InvalidPlaybackRate
-    | InvalidVolumeInputValueError String
-    | InvalidPlaybackRateInputValueError String
-
-
-type ErrorCategory
-    = DisallowedVolumeValue
-    | DisallowedPlaybackRateValue
-    | MalformedVolumeInputValue
-    | MalformedInvalidPlaybackRateInputValue
-
-
-errorMsgToErrorCategory : ErrorMsg -> ErrorCategory
-errorMsgToErrorCategory msg =
-    case msg of
-        VolumeError _ ->
-            DisallowedVolumeValue
-
-        PlaybackRateError _ ->
-            DisallowedPlaybackRateValue
-
-        InvalidVolumeInputValueError _ ->
-            MalformedVolumeInputValue
-
-        InvalidPlaybackRateInputValueError _ ->
-            MalformedInvalidPlaybackRateInputValue
 
 
 type Msg
@@ -211,33 +154,10 @@ type Msg
     | SetplaybackRate String
     | ClickedProgressBar
     | GotCurrentTime Float
-    | GotErrorMsg ErrorMsg
     | GotCurrentVolume Int
     | TouchedVolumeSlider
     | MovedVolumeSlider
     | UntouchedVolumeSlider
-
-
-handleError : ErrorMsg -> ( Error, Cmd msg )
-handleError msg =
-    case msg of
-        VolumeError UnderflowVolume ->
-            ( Error msg "volume must be more than 0.0", Cmd.none )
-
-        VolumeError OverflowVolume ->
-            ( Error msg "volume must be less than 2.0", Cmd.none )
-
-        PlaybackRateError UnderflowPlaybackRate ->
-            ( Error msg "playback rate must be more than 0.0", Cmd.none )
-
-        PlaybackRateError OverflowPlaybackRate ->
-            ( Error msg "playback rate be less than 2.0", Cmd.none )
-
-        InvalidVolumeInputValueError value ->
-            ( Error msg ("Volume must be 0.0 <= x <= 100.0, but " ++ value), Cmd.none )
-
-        InvalidPlaybackRateInputValueError value ->
-            ( Error msg ("Playback Rate must be 0.0 <= x <= 2.0, but " ++ value), Cmd.none )
 
 
 updateSection : SectionMsg -> Float -> Section -> ( Section, Cmd msg )
@@ -264,56 +184,6 @@ updateSection msg duration section =
 
             else
                 ( section, Cmd.none )
-
-
-disallowedVolumeValueKey : ErrorMemoryKey
-disallowedVolumeValueKey =
-    "VolErr"
-
-
-disallowedPlaybackRateValueKey : ErrorMemoryKey
-disallowedPlaybackRateValueKey =
-    "PbRErr"
-
-
-malformedVolumeInputValueKey : ErrorMemoryKey
-malformedVolumeInputValueKey =
-    "VolInputErr"
-
-
-malformedPlaybackRateInputValueKey : ErrorMemoryKey
-malformedPlaybackRateInputValueKey =
-    "PbRInputErr"
-
-
-toErrorMemoryKey : ErrorCategory -> ErrorMemoryKey
-toErrorMemoryKey c =
-    case c of
-        DisallowedVolumeValue ->
-            disallowedVolumeValueKey
-
-        DisallowedPlaybackRateValue ->
-            disallowedPlaybackRateValueKey
-
-        MalformedVolumeInputValue ->
-            malformedVolumeInputValueKey
-
-        MalformedInvalidPlaybackRateInputValue ->
-            malformedPlaybackRateInputValueKey
-
-
-recordError : ErrorMemory -> Error -> ErrorMemory
-recordError errors error =
-    Dict.insert ((errorMsgToErrorCategory >> toErrorMemoryKey) error.reason) error errors
-
-
-resolveError : ErrorMemory -> List ErrorCategory -> ErrorMemory
-resolveError errors categories =
-    let
-        keys =
-            List.map toErrorMemoryKey categories
-    in
-    Dict.filter (\k _ -> not (List.member k keys)) errors
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -381,19 +251,10 @@ view model =
     div
         [ class "audio-player"
         ]
-        [ errorMessageView model.errors
-        , audioSourceView model.source
+        [ audioSourceView model.source
         , playerWrapperView model
         , sourceInfoView model.source
         ]
-
-
-errorMessageView : ErrorMemory -> Html msg
-errorMessageView errors =
-    div
-        [ class "error-messages"
-        ]
-        (List.map (\v -> text v.message) (Dict.values errors))
 
 
 audioSourceView : Source -> Html Msg
