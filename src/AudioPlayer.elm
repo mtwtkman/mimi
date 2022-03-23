@@ -7,18 +7,17 @@ module AudioPlayer exposing
     , view
     )
 
-import Dict
 import Html exposing (Attribute, Html, audio, br, div, i, input, text)
 import Html.Attributes as Attr exposing (class, controls, src, type_, value)
 import Html.Events exposing (on, onClick, onInput)
 import Json.Decode as D
-import List
-import Ports exposing
-    ( pause
-    , play
-    , changeVolume
-    , updateCurrentTime
-    )
+import Ports
+    exposing
+        ( changeVolume
+        , pause
+        , play
+        , updateCurrentTime
+        )
 
 
 type alias Source =
@@ -229,7 +228,8 @@ update msg model =
         ChangeVolume v ->
             case String.toInt v of
                 Just volume ->
-                    ( { model | volume = Volume volume }, changeVolume ())
+                    ( { model | volume = Volume volume }, changeVolume () )
+
                 Nothing ->
                     ( model, Cmd.none )
 
@@ -243,7 +243,7 @@ update msg model =
             ( { model | volume = Volume v }, Cmd.none )
 
         _ ->
-            ( model, Cmd.none)
+            ( model, Cmd.none )
 
 
 view : Model -> Html Msg
@@ -334,6 +334,7 @@ playbackRateSettingForm model =
         , value (String.fromFloat model.playbackRate.value)
         ]
         []
+
 
 volumeSlider : Model -> Html Msg
 volumeSlider model =

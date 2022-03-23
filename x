@@ -15,7 +15,7 @@ case $cmd in
     python3 -m http.server -d mediaplayer 55301
     ;;
   reactor|w) elm reactor;;
-  format|f) elm-format --yes src/* tests/*;;
+  format|f) elm-format --yes src/*;;
   test|t) elm-test;;
   *) echo -n 'unknown command';
 esac
