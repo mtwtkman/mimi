@@ -42,10 +42,12 @@ isPlaying state =
     state == Playing
 
 
-type alias Volume = Int
+type alias Volume =
+    Int
 
 
-type alias PlaybackRate = Float
+type alias PlaybackRate =
+    Float
 
 
 type alias Section =
@@ -54,7 +56,8 @@ type alias Section =
     }
 
 
-type alias CurrentTime = Float
+type alias CurrentTime =
+    Float
 
 
 validateRange : comparable -> comparable -> comparable -> Bool
