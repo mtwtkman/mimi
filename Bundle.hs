@@ -1,13 +1,17 @@
 module Main where
 
+import Data.Char
 import System.Directory
 import Control.Monad
 
 styleTag :: String -> String
 styleTag src = "<link rel=\"stylesheet\" href=\"" ++ src ++ "\">"
 
-myStyleSheet :: String
-myStyleSheet = "style.css"
+stylesheet :: String
+stylesheet = "style.css"
+
+minifiedStyleSheet :: String
+minifiedStyleSheet = "style.min.css"
 
 buildHtml :: String -> String -> String
 buildHtml appjsdef initjsdef = concat [
@@ -15,7 +19,7 @@ buildHtml appjsdef initjsdef = concat [
     , "<head>"
     , "<meta charset=\"utf8\">"
     , styleTag "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
-    , styleTag ("./" ++ myStyleSheet)
+    , styleTag ("./" ++ minifiedStyleSheet)
     , "<script>"
     , appjsdef
     , "</script></head>"
@@ -33,9 +37,17 @@ readInitJavascript :: IO String
 readInitJavascript =
     readFile "src/init.js"
 
-copyStyleSheet :: IO ()
-copyStyleSheet =
-    copyFile myStyleSheet (appDirectory ++ "/" ++ myStyleSheet)
+readStylesheet :: IO String
+readStylesheet =
+    readFile stylesheet
+
+minifyStyleSheet :: String -> String
+minifyStyleSheet = filter $ not . isSpace
+
+buildStylesheet :: IO ()
+buildStylesheet = do
+    src <- readStylesheet
+    writeFile (appDirectory ++ "/" ++ minifiedStyleSheet) (minifyStyleSheet src)
 
 appDirectory :: FilePath
 appDirectory = "./mediaplayer"
@@ -50,18 +62,18 @@ setup = do
     when needToCleanup cleanup
     createDirectory appDirectory
 
-filename :: FilePath
-filename = appDirectory ++ "/index.html"
+indexHtml :: FilePath
+indexHtml = appDirectory ++ "/index.html"
 
 build :: String -> String -> IO ()
 build appjsdef initjsdef = do
-    writeFile filename (buildHtml appjsdef initjsdef)
+    writeFile indexHtml (buildHtml appjsdef initjsdef)
 
 main :: IO ()
 main = do
     setup
-    copyStyleSheet
+    buildStylesheet
     appjsdef <- readAppJavascript
     initjsdef <- readInitJavascript
     build appjsdef initjsdef
-    putStr $ "Generated " ++ filename
+    putStr $ "Generated " ++ indexHtml
