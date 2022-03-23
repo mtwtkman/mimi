@@ -30,7 +30,7 @@ const pause = () => {
   dom.pause();
 };
 
-const setupVolumeEventHandler = app => () => {
+const setupVolumeEventHandler = app => {
   const updateVolume = (sliderDom, mousePositionX) => {
     const sliderWidth = sliderDom.clientWidth;
     const volumeMaxValue = parseInt(sliderDom.getAttribute("max"));
@@ -55,10 +55,16 @@ const setupVolumeEventHandler = app => () => {
   dom.addEventListener("mouseleave", handle(_ => false), false)
 };
 
+const setupAudioNode = app => defaultVolume => {
+  const dom = getAudioPlayerElement();
+  dom.volume = defaultVolume / 100.0;
+  setupVolumeEventHandler(app);
+};
+
 const changeVolume = value => {
-  const audio = getAudioPlayerElement();
+  const dom = getAudioPlayerElement();
   const volumeSlider = findDom(".audio-volume-slider");
-  dom.volume = value;
+  dom.volume = value / 100.0;
 };
 
 const setPlaybackRate = value => {
@@ -70,7 +76,7 @@ const initializeApp = region => {
   const app = Elm.Main.init({ node: region });
   app.ports.play.subscribe(play);
   app.ports.pause.subscribe(pause);
-  app.ports.spawnAudioNode.subscribe(setupVolumeEventHandler(app));
+  app.ports.spawnAudioNode.subscribe(setupAudioNode(app));
   // app.ports.setCurrentTime.subscribe(updateCurrentTime);
   app.ports.changeVolume.subscribe(changeVolume);
   //app.ports.currentTimeReciever.send(getCurrentTime());

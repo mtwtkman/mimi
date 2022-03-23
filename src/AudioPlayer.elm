@@ -340,7 +340,7 @@ update msg model =
                 section =
                     Section 0.0 duration
             in
-            ( { model | source = newSource, section = Just section }, spawnAudioNode () )
+            ( { model | source = newSource, section = Just section }, spawnAudioNode model.volume.value )
 
         GotSectionMsg sectionMsg ->
             case ( model.source.duration, model.section ) of
@@ -355,7 +355,7 @@ update msg model =
                     ( model, Cmd.none )
 
         ChangeVolume ->
-            ( model, changeVolume ())
+            ( model, changeVolume model.volume.value)
 
         ClickedProgressBar ->
             ( model, updateCurrentTime () )
