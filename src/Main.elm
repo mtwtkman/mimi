@@ -112,7 +112,7 @@ view model =
             [ button [ onClick OpenFileSelector ] [ text "select file" ]
             ]
         , div
-            [ class "file-drag-area"
+            [ class "file-drop-area"
             , hijackOn "dragenter" (D.succeed DragEnter)
             , hijackOn "dragover" (D.succeed DragEnter)
             , hijackOn "dragleave" (D.succeed DragLeave)
