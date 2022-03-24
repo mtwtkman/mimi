@@ -7,9 +7,9 @@ module AudioPlayer exposing
     , view
     )
 
-import Html exposing (Attribute, Html, audio, br, div, i, input, text)
-import Html.Attributes as Attr exposing (class, controls, src, type_, value)
-import Html.Events exposing (on, onClick, onInput)
+import Html exposing (Attribute, Html, audio, br, div, i, input, option, progress, select, text)
+import Html.Attributes as Attr exposing (class, controls, selected, src, type_, value)
+import Html.Events exposing (on, onClick, onInput, targetValue)
 import Json.Decode as D
 import Ports
     exposing
@@ -60,13 +60,13 @@ type alias CurrentTime =
     Float
 
 
-validateRange : comparable -> comparable -> comparable -> Bool
-validateRange minV maxV v =
-    minV <= v && v <= maxV
-
-
 validateSection : Float -> Section -> Bool
 validateSection duration section =
+    let
+        validateRange : comparable -> comparable -> comparable -> Bool
+        validateRange minV maxV v =
+            minV <= v && v <= maxV
+    in
     validateRange 0.0 duration section.start
         && validateRange 0.0 duration section.end
         && section.start
@@ -107,12 +107,9 @@ type Msg
     | GotSectionMsg SectionMsg
     | ChangeVolume String
     | SetplaybackRate String
-    | ClickedProgressBar
     | GotCurrentTime Float
     | GotCurrentVolume Int
-    | TouchedVolumeSlider
-    | MovedVolumeSlider
-    | UntouchedVolumeSlider
+    | SelectedPlaybackRate String
 
 
 updateSection : SectionMsg -> Float -> Section -> ( Section, Cmd msg )
@@ -189,9 +186,6 @@ update msg model =
                 Nothing ->
                     ( model, Cmd.none )
 
-        ClickedProgressBar ->
-            ( model, updateCurrentTime () )
-
         GotCurrentTime t ->
             ( { model | currentTime = t }, Cmd.none )
 
@@ -240,6 +234,7 @@ playerControlView model =
         ]
         [ playIconView model.state
         , volumeSlider model
+        , playbackRateSelector model
         ]
 
 
@@ -273,23 +268,57 @@ playIconView state =
 
 progressbar : Model -> Html Msg
 progressbar model =
-    div
-        [ class "progressbar"
-        , onClick ClickedProgressBar
+    progress
+        [ class "play-timeline"
         ]
         []
 
 
-playbackRateSettingForm : Model -> Html Msg
-playbackRateSettingForm model =
-    input
+playbackRateSelector : Model -> Html Msg
+playbackRateSelector model =
+    let
+        maxVal =
+            2.0
+
+        minVal =
+            0.1
+
+        toString : Float -> String
+        toString =
+            String.fromFloat
+
+        options : List (Html msg)
+        options =
+            List.map
+                (\v ->
+                    let
+                        s =
+                            toString v
+                    in
+                    option
+                        [ value s
+                        , selected (v == model.playbackRate)
+                        ]
+                        [ text s
+                        ]
+                )
+                [ 0.5
+                , 0.75
+                , 1.0
+                , 1.5
+                , 1.75
+                , maxVal
+                ]
+    in
+    select
         [ class "audio-playbackRate"
         , type_ "number"
-        , Attr.min "0.0"
-        , Attr.max "0.2"
+        , (toString >> Attr.min) minVal
+        , (toString >> Attr.max) maxVal
         , value (String.fromFloat model.playbackRate)
+        , onSelectPlaybackRate
         ]
-        []
+        options
 
 
 volumeSlider : Model -> Html Msg
@@ -311,3 +340,8 @@ volumeSlider model =
 onLoadedData : Attribute Msg
 onLoadedData =
     on "loadeddata" (D.map LoadedData (D.at [ "target", "duration" ] D.float))
+
+
+onSelectPlaybackRate : Attribute Msg
+onSelectPlaybackRate =
+    on "change" (D.map SelectedPlaybackRate targetValue)
