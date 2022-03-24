@@ -11,7 +11,7 @@ module AudioPlayer exposing
 
 import Html.Styled exposing (Attribute, Html, audio, br, div, i, input, option, progress, select, text)
 import Html.Styled.Attributes as Attr exposing (class, controls, selected, src, type_, value)
-import Html.Styled.Events exposing (on, onClick, onInput, targetValue)
+import Html.Styled.Events exposing (on, onClick, onInput)
 import Json.Decode as D
 import Ports
     exposing
@@ -344,8 +344,7 @@ playbackRateSelector model =
                 playbackRateChoices
     in
     select
-        [ class "audio-playbackRate"
-        , type_ "number"
+        [ class "audio-playback-rate-selector"
         , (toString >> Attr.min) minVal
         , (toString >> Attr.max) maxVal
         , onInput SelectedPlaybackRate
