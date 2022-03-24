@@ -3,6 +3,8 @@ module AudioPlayer exposing
     , Msg(..)
     , Source
     , initModel
+    , playbackRateChoices
+    , playbackRateSelector
     , update
     , view
     )
@@ -13,7 +15,8 @@ import Html.Styled.Events exposing (on, onClick, onInput, targetValue)
 import Json.Decode as D
 import Ports
     exposing
-        ( changeVolume
+        ( changePlaybackRate
+        , changeVolume
         , pause
         , play
         , updateCurrentTime
@@ -192,6 +195,14 @@ update msg model =
         GotCurrentVolume v ->
             ( { model | volume = v }, Cmd.none )
 
+        SelectedPlaybackRate v ->
+            case String.toFloat v of
+                Just playbackRate ->
+                    ( { model | playbackRate = playbackRate }, changePlaybackRate playbackRate )
+
+                Nothing ->
+                    ( model, Cmd.none )
+
         _ ->
             ( model, Cmd.none )
 
@@ -274,14 +285,42 @@ progressbar model =
         []
 
 
+type PlaybackRateRange
+    = MaxPlaybackRate
+    | MinPlaybackRate
+
+
+toFloat : PlaybackRateRange -> Float
+toFloat x =
+    case x of
+        MaxPlaybackRate ->
+            2.0
+
+        MinPlaybackRate ->
+            0.1
+
+
+playbackRateChoices : List Float
+playbackRateChoices =
+    [ 0.25
+    , 0.5
+    , 0.75
+    , 1.0
+    , 1.25
+    , 1.5
+    , 1.75
+    , toFloat MinPlaybackRate
+    ]
+
+
 playbackRateSelector : Model -> Html Msg
 playbackRateSelector model =
     let
-        maxVal =
-            2.0
-
         minVal =
-            0.1
+            toFloat MinPlaybackRate
+
+        maxVal =
+            toFloat MaxPlaybackRate
 
         toString : Float -> String
         toString =
@@ -302,21 +341,14 @@ playbackRateSelector model =
                         [ text s
                         ]
                 )
-                [ 0.5
-                , 0.75
-                , 1.0
-                , 1.5
-                , 1.75
-                , maxVal
-                ]
+                playbackRateChoices
     in
     select
         [ class "audio-playbackRate"
         , type_ "number"
         , (toString >> Attr.min) minVal
         , (toString >> Attr.max) maxVal
-        , value (String.fromFloat model.playbackRate)
-        , onSelectPlaybackRate
+        , onInput SelectedPlaybackRate
         ]
         options
 
@@ -340,8 +372,3 @@ volumeSlider model =
 onLoadedData : Attribute Msg
 onLoadedData =
     on "loadeddata" (D.map LoadedData (D.at [ "target", "duration" ] D.float))
-
-
-onSelectPlaybackRate : Attribute Msg
-onSelectPlaybackRate =
-    on "change" (D.map SelectedPlaybackRate targetValue)

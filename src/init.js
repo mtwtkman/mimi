@@ -37,7 +37,7 @@ const changeVolume = () => {
   dom.volume = value / 100.0;
 };
 
-const setPlaybackRate = value => {
+const changePlaybackRate = value => {
   const dom = getAudioPlayerElement();
   dom.playbackRate = value;
 };
@@ -47,6 +47,7 @@ const initializeApp = region => {
   app.ports.play.subscribe(play);
   app.ports.pause.subscribe(pause);
   app.ports.changeVolume.subscribe(changeVolume);
+  app.ports.changePlaybackRate.subscribe(changePlaybackRate);
   // app.ports.setCurrentTime.subscribe(updateCurrentTime);
   //app.ports.currentTimeReciever.send(getCurrentTime());
 };
