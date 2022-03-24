@@ -1,12 +1,13 @@
 module Main exposing (main)
 
+import Css exposing (backgroundColor, hex, width, height, px)
 import AudioPlayer as AP
-import Browser exposing (Document)
+import Browser
 import File exposing (File)
 import File.Select as Select
-import Html exposing (Attribute, button, div, span, text)
-import Html.Attributes exposing (class)
-import Html.Events exposing (onClick, preventDefaultOn)
+import Html.Styled as StyledHtml exposing (Attribute, button, div, span, text, Html, toUnstyled)
+import Html.Styled.Attributes exposing (class, css)
+import Html.Styled.Events exposing (onClick, preventDefaultOn)
 import Json.Decode as D
 import Ports exposing (currentTimeReciever, currentVolumeReciever)
 import Task
@@ -14,10 +15,10 @@ import Task
 
 main : Program () Model Msg
 main =
-    Browser.document
+    Browser.element
         { init = init
         , update = update
-        , view = view
+        , view = view >> toUnstyled
         , subscriptions = subscriptions
         }
 
@@ -92,16 +93,15 @@ update msg model =
                     ( { model | audioPlayer = Just newApModel }, Cmd.map GotAudioPlayerMsg apMsg )
 
 
-view : Model -> Document Msg
+view : Model -> Html Msg
 view model =
-    { title = "mimi"
-    , body =
+    div []
         [ div
             [ class "audio-player-region"
             ]
             [ case model.audioPlayer of
                 Just apModel ->
-                    Html.map GotAudioPlayerMsg (AP.view apModel)
+                    StyledHtml.map GotAudioPlayerMsg (AP.view apModel)
 
                 Nothing ->
                     span [] []
@@ -113,20 +113,18 @@ view model =
             ]
         , div
             [ class "file-drag-area"
-            , class <|
-                if model.hover then
-                    "drag-on"
-
-                else
-                    "drag-off"
             , hijackOn "dragenter" (D.succeed DragEnter)
             , hijackOn "dragover" (D.succeed DragEnter)
             , hijackOn "dragleave" (D.succeed DragLeave)
             , hijackOn "drop" dropDecoder
+            , css
+                [ backgroundColor (hex (if model.hover then "336ff0" else "cacaca"))
+                , width (px 400)
+                , height (px 400)
+                ]
             ]
             [ text "drop here your audio file" ]
         ]
-    }
 
 
 dropDecoder : D.Decoder Msg

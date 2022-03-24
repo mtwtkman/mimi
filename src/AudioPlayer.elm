@@ -7,9 +7,9 @@ module AudioPlayer exposing
     , view
     )
 
-import Html exposing (Attribute, Html, audio, br, div, i, input, option, progress, select, text)
-import Html.Attributes as Attr exposing (class, controls, selected, src, type_, value)
-import Html.Events exposing (on, onClick, onInput, targetValue)
+import Html.Styled exposing (Attribute, Html, audio, br, div, i, input, option, progress, select, text)
+import Html.Styled.Attributes as Attr exposing (class, controls, selected, src, type_, value)
+import Html.Styled.Events exposing (on, onClick, onInput, targetValue)
 import Json.Decode as D
 import Ports
     exposing
