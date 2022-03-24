@@ -7,7 +7,6 @@ import AudioPlayer
         , playbackRateChoices
         , playbackRateSelector
         )
-import Expect
 import Html.Attributes exposing (value)
 import Html.Styled exposing (toUnstyled)
 import Test exposing (..)
@@ -22,17 +21,16 @@ suite =
         model =
             initModel "x" "y"
 
-        elem =
-            playbackRateSelector model |> toUnstyled
+        testableElem =
+            playbackRateSelector model |> toUnstyled |> Query.fromHtml
     in
     describe "playbackRateSelector"
         [ test "selects default playback rate related from model" <|
             \_ ->
-                elem
-                    |> Query.fromHtml
+                testableElem
                     |> Query.find [ Selector.selected True ]
                     |> Query.has [ Selector.attribute (value (String.fromFloat model.playbackRate)) ]
-        , test "updates model by selected value" <|
+        , test "emits a msg with option value" <|
             \_ ->
                 let
                     choices =
@@ -41,8 +39,7 @@ suite =
                     selectedValue =
                         Maybe.withDefault 0.0 (List.head choices)
                 in
-                elem
-                    |> Query.fromHtml
+                testableElem
                     |> Event.simulate (String.fromFloat selectedValue |> Event.input)
                     |> Event.expect (SelectedPlaybackRate <| String.fromFloat selectedValue)
         ]

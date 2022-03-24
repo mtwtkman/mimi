@@ -9,8 +9,8 @@ module AudioPlayer exposing
     , view
     )
 
-import Html.Styled exposing (Attribute, Html, audio, br, div, i, input, option, progress, select, text)
-import Html.Styled.Attributes as Attr exposing (class, controls, selected, src, type_, value)
+import Html.Styled exposing (Attribute, Html, audio, br, div, i, input, option, select, text)
+import Html.Styled.Attributes as Attr exposing (class, controls, selected, src, type_, value, disabled)
 import Html.Styled.Events exposing (on, onClick, onInput)
 import Json.Decode as D
 import Ports
@@ -242,11 +242,21 @@ playerControlView : Model -> Html Msg
 playerControlView model =
     div
         [ class "player-control"
-        ]
-        [ playIconView model.state
-        , volumeSlider model
-        , playbackRateSelector model
-        ]
+        ] <|
+        List.foldr
+            (\maybe acc ->
+                case maybe of
+                    Just e -> e :: acc
+                    Nothing -> acc
+            )
+            []
+            (
+                [ Just (playIconView model.state)
+                , Just (volumeSlider model)
+                , Just (playbackRateSelector model)
+                , Maybe.andThen (\d -> Just (progressBar d)) model.source.duration
+                ]
+            )
 
 
 sourceInfoView : Source -> Html Msg
@@ -277,10 +287,15 @@ playIconView state =
         []
 
 
-progressbar : Model -> Html Msg
-progressbar model =
-    progress
-        [ class "play-timeline"
+progressBar : Float -> Html Msg
+progressBar duration =
+    input
+        [ class "progress"
+        , disabled True
+        , Attr.min "0.0"
+        , Attr.max <| String.fromFloat duration
+        , Attr.value "0.0"
+        , type_ "range"
         ]
         []
 
