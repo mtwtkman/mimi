@@ -1,11 +1,11 @@
 module Main exposing (main)
 
-import Css exposing (backgroundColor, hex, width, height, px)
 import AudioPlayer as AP
 import Browser
+import Css exposing (backgroundColor, height, hex, px, width)
 import File exposing (File)
 import File.Select as Select
-import Html.Styled as StyledHtml exposing (Attribute, button, div, span, text, Html, toUnstyled)
+import Html.Styled as StyledHtml exposing (Attribute, Html, button, div, span, text, toUnstyled)
 import Html.Styled.Attributes exposing (class, css)
 import Html.Styled.Events exposing (onClick, preventDefaultOn)
 import Json.Decode as D
@@ -118,7 +118,15 @@ view model =
             , hijackOn "dragleave" (D.succeed DragLeave)
             , hijackOn "drop" dropDecoder
             , css
-                [ backgroundColor (hex (if model.hover then "336ff0" else "cacaca"))
+                [ backgroundColor
+                    (hex
+                        (if model.hover then
+                            "336ff0"
+
+                         else
+                            "cacaca"
+                        )
+                    )
                 , width (px 400)
                 , height (px 400)
                 ]
