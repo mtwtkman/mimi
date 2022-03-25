@@ -9,8 +9,8 @@ module AudioPlayer exposing
     , view
     )
 
-import Html.Styled exposing (Attribute, Html, audio, div, i, input, option, select, text, span)
-import Html.Styled.Attributes as Attr exposing (class, controls, step, selected, src, type_, value)
+import Html.Styled exposing (Attribute, Html, audio, div, i, input, option, select, span, text)
+import Html.Styled.Attributes as Attr exposing (class, controls, selected, src, step, type_, value)
 import Html.Styled.Events exposing (on, onClick, onInput)
 import Json.Decode as D
 import Ports
@@ -199,24 +199,27 @@ update msg model =
 
                 Nothing ->
                     ( model, Cmd.none )
+
         UpdatedCurrentTime t ->
-            ( { model | currentTime = t}, Cmd.none)
+            ( { model | currentTime = t }, Cmd.none )
 
         Seeked v ->
             case String.toFloat v of
                 Just currentTime ->
-                    ({ model | currentTime = currentTime}, seek currentTime)
+                    ( { model | currentTime = currentTime }, seek currentTime )
+
                 Nothing ->
                     ( model, Cmd.none )
+
 
 view : Model -> Html Msg
 view model =
     div
         [ class "audio-player"
         ]
-        [ audioSourceView model.source
+        [ sourceInfoView model.source
+        , audioSourceView model.source
         , playerWrapperView model
-        , sourceInfoView model.source
         ]
 
 
@@ -270,7 +273,6 @@ sourceInfoView source =
         [ class "audio-info"
         ]
         [ text <| "filename: " ++ source.name
-        , text <| "duration: " ++ String.fromFloat (Maybe.withDefault 0.0 source.duration)
         ]
 
 
@@ -294,7 +296,8 @@ playIconView state =
 progressBar : Float -> Float -> Html Msg
 progressBar currentTime duration =
     let
-        currentTimeString = String.fromFloat currentTime
+        currentTimeString =
+            String.fromFloat currentTime
     in
     div
         []
@@ -374,13 +377,17 @@ playbackRateSelector model =
                 )
                 playbackRateChoices
     in
-    select
-        [ class "audio-playback-rate-selector"
-        , (toString >> Attr.min) minVal
-        , (toString >> Attr.max) maxVal
-        , onInput ChangedPlaybackRate
+    div
+        []
+        [ span [] [ text "playbackRate" ]
+        , select
+            [ class "audio-playback-rate-selector"
+            , (toString >> Attr.min) minVal
+            , (toString >> Attr.max) maxVal
+            , onInput ChangedPlaybackRate
+            ]
+            options
         ]
-        options
 
 
 volumeSlider : Model -> Html Msg
@@ -407,6 +414,7 @@ onLoadedData : Attribute Msg
 onLoadedData =
     on "loadeddata" (D.map LoadedData (D.at [ "target", "duration" ] D.float))
 
+
 onCurrentTimeUpdate : Attribute Msg
 onCurrentTimeUpdate =
-    on "timeupdate" (D.map UpdatedCurrentTime (D.at ["target", "currentTime"] D.float))
+    on "timeupdate" (D.map UpdatedCurrentTime (D.at [ "target", "currentTime" ] D.float))
