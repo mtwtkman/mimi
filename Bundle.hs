@@ -28,7 +28,7 @@ readAppJavascript =
 
 readInitJavascript :: IO String
 readInitJavascript =
-    readFile "src/init.js"
+    readFile "dist/init.js"
 
 minifyStyleSheet :: String -> String
 minifyStyleSheet = filter $ not . isSpace

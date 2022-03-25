@@ -1,20 +1,32 @@
 #!/bin/sh
 
-builtjsname="dist/app.js"
+distdir="dist"
+appjs="app.js"
+initjs="init.js"
+builtappjs="$distdir/$appjs"
+builtinitjs="$distdir/$initjs"
+
+process_js() {
+  mkdir -p $distdir
+  elm make $1 src/Main.elm --output $builtappjs
+  cp "src/$initjs" $builtinitjs
+}
 
 cmd=$1
 shift
 case $cmd in
   publish|p)
-    elm make --optimize src/Main.elm --output $builtjsname
-    echo "uglify $builtjsname"
-    npx uglify-js $builtjsname \
+    process_js "--optimize"
+    echo "uglify $builtappjs"
+    npx uglifyjs $builtappjs \
       --compress 'pure_funcs=[F2,F3,F4,F5,F6,F7,F8,F9,A2,A3,A4,A5,A6,A7,A8,A9],pure_getters,keep_fargs=false,unsafe_comps,unsafe' |\
-       npx uglify-js --mangle --output $builtjsname
+       npx uglifyjs --mangle --output $builtappjs
+    echo "uglify $builtinitjs"
+    npx uglifyjs --compress --mangle --output $builtinitjs -- $builtinitjs
     runghc Bundle
     ;;
   dev|d)
-    elm make --debug src/Main.elm --output $builtjsname
+    process_js "--debug"
     runghc Bundle
     ;;
   serve|s)
