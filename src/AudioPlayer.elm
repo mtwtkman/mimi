@@ -382,8 +382,6 @@ playbackRateSelector model =
         [ span [] [ text "playbackRate" ]
         , select
             [ class "audio-playback-rate-selector"
-            , (toString >> Attr.min) minVal
-            , (toString >> Attr.max) maxVal
             , onInput ChangedPlaybackRate
             ]
             options

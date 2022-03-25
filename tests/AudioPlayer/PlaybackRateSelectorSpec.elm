@@ -40,6 +40,7 @@ suite =
                         Maybe.withDefault 0.0 (List.head choices)
                 in
                 testableElem
+                    |> Query.find [ Selector.tag "select" ]
                     |> Event.simulate (String.fromFloat selectedValue |> Event.input)
                     |> Event.expect (ChangedPlaybackRate <| String.fromFloat selectedValue)
         ]
