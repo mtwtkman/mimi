@@ -350,12 +350,6 @@ playbackRateChoices =
 playbackRateSelector : Model -> Html Msg
 playbackRateSelector model =
     let
-        minVal =
-            toFloat MinPlaybackRate
-
-        maxVal =
-            toFloat MaxPlaybackRate
-
         toString : Float -> String
         toString =
             String.fromFloat
