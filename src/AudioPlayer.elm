@@ -9,7 +9,7 @@ module AudioPlayer exposing
     , view
     )
 
-import Html.Styled exposing (Attribute, Html, audio, br, div, i, input, option, select, text)
+import Html.Styled exposing (Attribute, Html, audio, br, div, i, input, option, select, text, span)
 import Html.Styled.Attributes as Attr exposing (class, controls, disabled, selected, src, type_, value)
 import Html.Styled.Events exposing (on, onClick, onInput)
 import Json.Decode as D
@@ -110,6 +110,7 @@ type Msg
     | ChangeVolume String
     | GotCurrentTime Float
     | SelectedPlaybackRate String
+    | UpdatedCurrentTime Float
 
 
 updateSection : SectionMsg -> Float -> Section -> ( Section, Cmd msg )
@@ -196,7 +197,8 @@ update msg model =
 
                 Nothing ->
                     ( model, Cmd.none )
-
+        UpdatedCurrentTime t ->
+            ( { model | currentTime = t}, Cmd.none)
 
 view : Model -> Html Msg
 view model =
@@ -216,6 +218,7 @@ audioSourceView source =
         , controls False
         , onLoadedData
         , class "audio-source"
+        , onCurrentTimeUpdate
         ]
         []
 
@@ -282,15 +285,25 @@ playIconView state =
 
 progressBar : Float -> Float -> Html Msg
 progressBar currentTime duration =
-    input
-        [ class "progress"
-        , disabled True
-        , Attr.min "0.0"
-        , Attr.max <| String.fromFloat duration
-        , Attr.value <| String.fromFloat currentTime
-        , type_ "range"
-        ]
+    let
+        currentTimeString = String.fromFloat currentTime
+    in
+    div
         []
+        [ input
+            [ class "progress"
+            , disabled True
+            , Attr.min "0.0"
+            , Attr.max <| String.fromFloat duration
+            , Attr.value currentTimeString
+            , type_ "range"
+            ]
+            []
+        , span
+            []
+            [ text currentTimeString
+            ]
+        ]
 
 
 type PlaybackRateRange
@@ -380,3 +393,7 @@ volumeSlider model =
 onLoadedData : Attribute Msg
 onLoadedData =
     on "loadeddata" (D.map LoadedData (D.at [ "target", "duration" ] D.float))
+
+onCurrentTimeUpdate : Attribute Msg
+onCurrentTimeUpdate =
+    on "timeupdate" (D.map UpdatedCurrentTime (D.at ["target", "currentTime"] D.float))
