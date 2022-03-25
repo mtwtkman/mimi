@@ -435,19 +435,40 @@ sectionForm section =
     in
     div
         []
-        [ sectionStartInput (Maybe.withDefault 0.0 start)
+        [ sectionStartInput start
+        , sectionEndInput end
         ]
         |> StyledHtml.map GotSectionMsg
 
 
-sectionStartInput : Float -> Html SectionMsg
-sectionStartInput v =
+optionalFloatInputNode : Maybe Float -> (String -> msg) -> Html msg
+optionalFloatInputNode v msg =
     input
-        [ onInput (String.toFloat >> Maybe.withDefault 0.0 >> SetStartPoint)
+        [ onInput msg
         , type_ "number"
-        , value (String.fromFloat v)
+        , (Maybe.andThen (String.fromFloat >> Just) >> Maybe.withDefault "")  v |> value
         ]
         []
+
+
+sectionInput : Maybe Float -> (Float -> SectionMsg) -> SectionMsg -> Html SectionMsg
+sectionInput v setMsg resetMsg =
+    optionalFloatInputNode v (\inputValue ->
+        case String.toFloat inputValue of
+            Just val ->
+                setMsg val
+            Nothing ->
+                resetMsg
+    )
+
+
+sectionStartInput : Maybe Float -> Html SectionMsg
+sectionStartInput v =
+    sectionInput v SetStartPoint ResetStartPoint
+
+sectionEndInput : Maybe Float -> Html SectionMsg
+sectionEndInput v =
+    sectionInput v SetEndPoint ResetEndPoint
 
 
 onLoadedData : Attribute Msg
