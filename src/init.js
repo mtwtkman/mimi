@@ -2,13 +2,6 @@ const findDom = selector => document.querySelector(selector)
 const getAudioPlayerElement = () => findDom("audio");
 const getVolumeSliderElement = () => findDom(".audio-volume-slider");
 
-const tick = (start, interval) => {
-  setInterval(() => {
-  }, interval);
-}
-
-const tickBy1Millisec = start => tick(start, 1)
-
 const play = () => {
   const dom = getAudioPlayerElement();
   dom.play();
