@@ -6,5 +6,9 @@ mkShell {
         elmPackages.elm-test
         ghc
         python310
+        nodejs
     ];
+    shellHook = ''
+    npm install uglify-js
+    '';
 }

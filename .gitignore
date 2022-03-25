@@ -3,3 +3,4 @@ dist-newstyle
 elm-stuff
 *.html
 mediaplayer
+node_modules
