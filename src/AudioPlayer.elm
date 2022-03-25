@@ -9,7 +9,7 @@ module AudioPlayer exposing
     , view
     )
 
-import Html.Styled exposing (Attribute, Html, audio, br, div, i, input, option, select, text, span)
+import Html.Styled exposing (Attribute, Html, audio, div, i, input, option, select, text, span)
 import Html.Styled.Attributes as Attr exposing (class, controls, step, selected, src, type_, value)
 import Html.Styled.Events exposing (on, onClick, onInput)
 import Json.Decode as D
@@ -270,7 +270,6 @@ sourceInfoView source =
         [ class "audio-info"
         ]
         [ text <| "filename: " ++ source.name
-        , br [] []
         , text <| "duration: " ++ String.fromFloat (Maybe.withDefault 0.0 source.duration)
         ]
 
