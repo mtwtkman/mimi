@@ -9,7 +9,6 @@ import Html.Styled as StyledHtml exposing (Attribute, Html, button, div, span, t
 import Html.Styled.Attributes exposing (class, css)
 import Html.Styled.Events exposing (onClick, preventDefaultOn)
 import Json.Decode as D
-import Ports exposing (currentTimeReciever, currentVolumeReciever)
 import Task
 
 
@@ -152,7 +151,4 @@ hijack msg =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Sub.batch
-        [ Sub.map GotAudioPlayerMsg (currentTimeReciever AP.GotCurrentTime)
-        , Sub.map GotAudioPlayerMsg (currentVolumeReciever AP.GotCurrentVolume)
-        ]
+    Sub.none

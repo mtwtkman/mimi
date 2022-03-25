@@ -9,17 +9,6 @@ const tick = (start, interval) => {
 
 const tickBy1Millisec = start => tick(start, 1)
 
-const getCurrentTime = () => {
-  const dom = getAudioPlayerElement();
-  return dom.currentTime
-};
-
-const updateCurrentTime = () => {
-  const dom = getAudioPlayerElement();
-  // TODO: get current progress bar position and update to new value.
-  dom.currentTime = value;
-};
-
 const play = () => {
   const dom = getAudioPlayerElement();
   dom.play();
@@ -48,8 +37,6 @@ const initializeApp = region => {
   app.ports.pause.subscribe(pause);
   app.ports.changeVolume.subscribe(changeVolume);
   app.ports.changePlaybackRate.subscribe(changePlaybackRate);
-  // app.ports.setCurrentTime.subscribe(updateCurrentTime);
-  //app.ports.currentTimeReciever.send(getCurrentTime());
 };
 
 initializeApp(document.querySelector("main"));

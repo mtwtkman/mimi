@@ -10,7 +10,7 @@ module AudioPlayer exposing
     )
 
 import Html.Styled exposing (Attribute, Html, audio, br, div, i, input, option, select, text)
-import Html.Styled.Attributes as Attr exposing (class, controls, selected, src, type_, value, disabled)
+import Html.Styled.Attributes as Attr exposing (class, controls, disabled, selected, src, type_, value)
 import Html.Styled.Events exposing (on, onClick, onInput)
 import Json.Decode as D
 import Ports
@@ -19,7 +19,6 @@ import Ports
         , changeVolume
         , pause
         , play
-        , updateCurrentTime
         )
 
 
@@ -109,9 +108,7 @@ type Msg
     | LoadedData Float
     | GotSectionMsg SectionMsg
     | ChangeVolume String
-    | SetplaybackRate String
     | GotCurrentTime Float
-    | GotCurrentVolume Int
     | SelectedPlaybackRate String
 
 
@@ -192,9 +189,6 @@ update msg model =
         GotCurrentTime t ->
             ( { model | currentTime = t }, Cmd.none )
 
-        GotCurrentVolume v ->
-            ( { model | volume = v }, Cmd.none )
-
         SelectedPlaybackRate v ->
             case String.toFloat v of
                 Just playbackRate ->
@@ -202,9 +196,6 @@ update msg model =
 
                 Nothing ->
                     ( model, Cmd.none )
-
-        _ ->
-            ( model, Cmd.none )
 
 
 view : Model -> Html Msg
@@ -242,21 +233,23 @@ playerControlView : Model -> Html Msg
 playerControlView model =
     div
         [ class "player-control"
-        ] <|
+        ]
+    <|
         List.foldr
             (\maybe acc ->
                 case maybe of
-                    Just e -> e :: acc
-                    Nothing -> acc
+                    Just e ->
+                        e :: acc
+
+                    Nothing ->
+                        acc
             )
             []
-            (
-                [ Just (playIconView model.state)
-                , Just (volumeSlider model)
-                , Just (playbackRateSelector model)
-                , Maybe.andThen (\d -> Just (progressBar d)) model.source.duration
-                ]
-            )
+            [ Just (playIconView model.state)
+            , Just (volumeSlider model)
+            , Just (playbackRateSelector model)
+            , Maybe.andThen (\d -> Just (progressBar model.currentTime d)) model.source.duration
+            ]
 
 
 sourceInfoView : Source -> Html Msg
@@ -287,14 +280,14 @@ playIconView state =
         []
 
 
-progressBar : Float -> Html Msg
-progressBar duration =
+progressBar : Float -> Float -> Html Msg
+progressBar currentTime duration =
     input
         [ class "progress"
         , disabled True
         , Attr.min "0.0"
         , Attr.max <| String.fromFloat duration
-        , Attr.value "0.0"
+        , Attr.value <| String.fromFloat currentTime
         , type_ "range"
         ]
         []

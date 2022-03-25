@@ -16,13 +16,3 @@ port changePlaybackRate : Float -> Cmd msg
 
 
 port updateCurrentTime : () -> Cmd msg
-
-
-
--- SUBSCRIPTIONS
-
-
-port currentTimeReciever : (Float -> msg) -> Sub msg
-
-
-port currentVolumeReciever : (Int -> msg) -> Sub msg
