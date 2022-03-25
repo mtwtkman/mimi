@@ -41,5 +41,5 @@ suite =
                 in
                 testableElem
                     |> Event.simulate (String.fromFloat selectedValue |> Event.input)
-                    |> Event.expect (SelectedPlaybackRate <| String.fromFloat selectedValue)
+                    |> Event.expect (ChangedPlaybackRate <| String.fromFloat selectedValue)
         ]

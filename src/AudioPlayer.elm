@@ -108,11 +108,11 @@ type Msg
     = Toggle
     | LoadedData Float
     | GotSectionMsg SectionMsg
-    | ChangeVolume String
+    | ChangedVolume String
     | GotCurrentTime Float
-    | SelectedPlaybackRate String
+    | ChangedPlaybackRate String
     | UpdatedCurrentTime Float
-    | Seek String
+    | Seeked String
 
 
 updateSection : SectionMsg -> Float -> Section -> ( Section, Cmd msg )
@@ -181,7 +181,7 @@ update msg model =
                 _ ->
                     ( model, Cmd.none )
 
-        ChangeVolume v ->
+        ChangedVolume v ->
             case String.toInt v of
                 Just volume ->
                     ( { model | volume = volume }, changeVolume () )
@@ -192,7 +192,7 @@ update msg model =
         GotCurrentTime t ->
             ( { model | currentTime = t }, Cmd.none )
 
-        SelectedPlaybackRate v ->
+        ChangedPlaybackRate v ->
             case String.toFloat v of
                 Just playbackRate ->
                     ( { model | playbackRate = playbackRate }, changePlaybackRate playbackRate )
@@ -202,7 +202,7 @@ update msg model =
         UpdatedCurrentTime t ->
             ( { model | currentTime = t}, Cmd.none)
 
-        Seek v ->
+        Seeked v ->
             case String.toFloat v of
                 Just currentTime ->
                     ({ model | currentTime = currentTime}, seek currentTime)
@@ -304,7 +304,7 @@ progressBar currentTime duration =
             , Attr.max <| String.fromFloat duration
             , Attr.value currentTimeString
             , type_ "range"
-            , onInput Seek
+            , onInput Seeked
             , step "0.01"
             ]
             []
@@ -378,7 +378,7 @@ playbackRateSelector model =
         [ class "audio-playback-rate-selector"
         , (toString >> Attr.min) minVal
         , (toString >> Attr.max) maxVal
-        , onInput SelectedPlaybackRate
+        , onInput ChangedPlaybackRate
         ]
         options
 
@@ -386,13 +386,17 @@ playbackRateSelector model =
 volumeSlider : Model -> Html Msg
 volumeSlider model =
     div []
-        [ input
+        [ span
+            []
+            [ text <| "volume"
+            ]
+        , input
             [ class "audio-volume-slider"
             , type_ "range"
             , value (String.fromInt model.volume)
             , Attr.max "100"
             , Attr.min "0"
-            , onInput ChangeVolume
+            , onInput ChangedVolume
             ]
             []
         , text <| String.fromInt model.volume
