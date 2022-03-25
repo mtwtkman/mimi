@@ -270,8 +270,8 @@ playerWrapperView model =
 
 
 andThenRender : Maybe a -> (a -> Html Msg) -> Maybe (Html Msg)
-andThenRender a cond =
-    Maybe.andThen (cond >> Just) a
+andThenRender a v =
+    Maybe.andThen (v >> Just) a
 
 
 playerControlView : Model -> Html Msg
