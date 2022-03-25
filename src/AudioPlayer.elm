@@ -53,27 +53,17 @@ type alias PlaybackRate =
     Float
 
 
-type alias Section =
-    { start : Float
-    , end : Float
-    }
+type Section
+    = SectionStartOnly Float
+    | SectionEndOnly Float
+    | SectionRange
+        { start : Float
+        , end : Float
+        }
 
 
 type alias CurrentTime =
     Float
-
-
-validateSection : Float -> Section -> Bool
-validateSection duration section =
-    let
-        validateRange : comparable -> comparable -> comparable -> Bool
-        validateRange minV maxV v =
-            minV <= v && v <= maxV
-    in
-    validateRange 0.0 duration section.start
-        && validateRange 0.0 duration section.end
-        && section.start
-        < section.end
 
 
 type alias Model =
@@ -102,6 +92,8 @@ initModel name url =
 type SectionMsg
     = SetStartPoint Float
     | SetEndPoint Float
+    | ResetStartPoint
+    | ResetEndPoint
 
 
 type Msg
@@ -115,30 +107,35 @@ type Msg
     | Seeked String
 
 
-updateSection : SectionMsg -> Float -> Section -> ( Section, Cmd msg )
+updateSection : SectionMsg -> Float -> Section -> ( Maybe Section, Cmd msg )
 updateSection msg duration section =
-    case msg of
-        SetStartPoint v ->
-            let
-                newSection =
-                    { section | start = v }
-            in
-            if validateSection duration newSection then
-                ( newSection, Cmd.none )
+    case ( msg, section ) of
+        ( SetStartPoint s, SectionStartOnly _ ) ->
+            ( Just (SectionStartOnly s), Cmd.none )
 
-            else
-                ( section, Cmd.none )
+        ( SetStartPoint s, SectionEndOnly e ) ->
+            ( Just (SectionRange { start = s, end = e }), Cmd.none )
 
-        SetEndPoint v ->
-            let
-                newSection =
-                    { section | end = v }
-            in
-            if validateSection duration newSection then
-                ( newSection, Cmd.none )
+        ( SetStartPoint s, SectionRange r ) ->
+            ( Just (SectionRange { r | start = s }), Cmd.none )
 
-            else
-                ( section, Cmd.none )
+        ( SetEndPoint e, SectionStartOnly s ) ->
+            ( Just (SectionRange { start = s, end = e }), Cmd.none )
+
+        ( SetEndPoint e, SectionEndOnly _ ) ->
+            ( Just (SectionEndOnly e), Cmd.none )
+
+        ( SetEndPoint e, SectionRange r ) ->
+            ( Just (SectionRange { r | end = e }), Cmd.none )
+
+        ( ResetStartPoint, SectionRange r ) ->
+            ( Just (SectionEndOnly r.end), Cmd.none )
+
+        ( ResetEndPoint, SectionRange r ) ->
+            ( Just (SectionStartOnly r.start), Cmd.none )
+
+        _ ->
+            ( Nothing, Cmd.none )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -165,7 +162,7 @@ update msg model =
                     { source | duration = Just duration }
 
                 section =
-                    Section 0.0 duration
+                    SectionRange { start = 0.0, end = duration }
             in
             ( { model | source = newSource, section = Just section }, Cmd.none )
 
@@ -176,7 +173,7 @@ update msg model =
                         ( newSection, subMsg ) =
                             updateSection sectionMsg duration section
                     in
-                    ( { model | section = Just newSection }, Cmd.map GotSectionMsg subMsg )
+                    ( { model | section = newSection }, Cmd.map GotSectionMsg subMsg )
 
                 _ ->
                     ( model, Cmd.none )
