@@ -14,7 +14,7 @@ const pause = () => {
 
 const changeVolume = () => {
   const dom = getAudioPlayerElement();
-  const volumeSlider = findDom(".audio-volume-slider");
+  const volumeSlider = getVolumeSliderElement();
   const value = parseInt(volumeSlider.value);
   dom.volume = value / 100.0;
 };
