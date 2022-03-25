@@ -269,6 +269,11 @@ playerWrapperView model =
         ]
 
 
+andThenRender : Maybe a -> (a -> Html Msg) -> Maybe (Html Msg)
+andThenRender a cond =
+    Maybe.andThen (cond >> Just) a
+
+
 playerControlView : Model -> Html Msg
 playerControlView model =
     div
@@ -288,7 +293,8 @@ playerControlView model =
             [ Just (playIconView model.state)
             , Just (volumeSlider model)
             , Just (playbackRateSelector model)
-            , Maybe.andThen (\d -> Just (progressBar model.currentTime d)) model.source.duration
+            , andThenRender model.source.duration (progressBar model.currentTime)
+            , andThenRender model.section sectionForm
             ]
 
 
@@ -446,25 +452,28 @@ optionalFloatInputNode v msg =
     input
         [ onInput msg
         , type_ "number"
-        , (Maybe.andThen (String.fromFloat >> Just) >> Maybe.withDefault "")  v |> value
+        , (Maybe.andThen (String.fromFloat >> Just) >> Maybe.withDefault "") v |> value
         ]
         []
 
 
 sectionInput : Maybe Float -> (Float -> SectionMsg) -> SectionMsg -> Html SectionMsg
 sectionInput v setMsg resetMsg =
-    optionalFloatInputNode v (\inputValue ->
-        case String.toFloat inputValue of
-            Just val ->
-                setMsg val
-            Nothing ->
-                resetMsg
-    )
+    optionalFloatInputNode v
+        (\inputValue ->
+            case String.toFloat inputValue of
+                Just val ->
+                    setMsg val
+
+                Nothing ->
+                    resetMsg
+        )
 
 
 sectionStartInput : Maybe Float -> Html SectionMsg
 sectionStartInput v =
     sectionInput v SetStartPoint ResetStartPoint
+
 
 sectionEndInput : Maybe Float -> Html SectionMsg
 sectionEndInput v =
