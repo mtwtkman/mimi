@@ -9,7 +9,7 @@ module AudioPlayer exposing
     , view
     )
 
-import Html.Styled exposing (Attribute, Html, audio, div, i, input, option, select, span, text)
+import Html.Styled as StyledHtml exposing (Attribute, Html, audio, div, i, input, option, select, span, text)
 import Html.Styled.Attributes as Attr exposing (class, controls, selected, src, step, type_, value)
 import Html.Styled.Events exposing (on, onClick, onInput)
 import Json.Decode as D
@@ -62,6 +62,19 @@ type Section
         }
 
 
+toRecord : Section -> { start : Maybe Float, end : Maybe Float }
+toRecord section =
+    case section of
+        SectionStartOnly s ->
+            { start = Just s, end = Nothing }
+
+        SectionEndOnly e ->
+            { start = Nothing, end = Just e }
+
+        SectionRange r ->
+            { start = Just r.start, end = Just r.end }
+
+
 type alias CurrentTime =
     Float
 
@@ -109,33 +122,48 @@ type Msg
 
 updateSection : SectionMsg -> Float -> Section -> ( Maybe Section, Cmd msg )
 updateSection msg duration section =
-    case ( msg, section ) of
-        ( SetStartPoint s, SectionStartOnly _ ) ->
-            ( Just (SectionStartOnly s), Cmd.none )
+    case msg of
+        SetStartPoint s ->
+            case section of
+                SectionStartOnly _ ->
+                    ( Just (SectionStartOnly s), Cmd.none )
 
-        ( SetStartPoint s, SectionEndOnly e ) ->
-            ( Just (SectionRange { start = s, end = e }), Cmd.none )
+                SectionEndOnly e ->
+                    ( Just (SectionRange { start = s, end = e }), Cmd.none )
 
-        ( SetStartPoint s, SectionRange r ) ->
-            ( Just (SectionRange { r | start = s }), Cmd.none )
+                SectionRange r ->
+                    ( Just (SectionRange { r | start = s }), Cmd.none )
 
-        ( SetEndPoint e, SectionStartOnly s ) ->
-            ( Just (SectionRange { start = s, end = e }), Cmd.none )
+        SetEndPoint e ->
+            if e > duration then
+                ( Just section, Cmd.none )
 
-        ( SetEndPoint e, SectionEndOnly _ ) ->
-            ( Just (SectionEndOnly e), Cmd.none )
+            else
+                case section of
+                    SectionStartOnly s ->
+                        ( Just (SectionRange { start = s, end = e }), Cmd.none )
 
-        ( SetEndPoint e, SectionRange r ) ->
-            ( Just (SectionRange { r | end = e }), Cmd.none )
+                    SectionEndOnly _ ->
+                        ( Just (SectionEndOnly e), Cmd.none )
 
-        ( ResetStartPoint, SectionRange r ) ->
-            ( Just (SectionEndOnly r.end), Cmd.none )
+                    SectionRange r ->
+                        ( Just (SectionRange { r | end = e }), Cmd.none )
 
-        ( ResetEndPoint, SectionRange r ) ->
-            ( Just (SectionStartOnly r.start), Cmd.none )
+        ResetStartPoint ->
+            case section of
+                SectionRange r ->
+                    ( Just (SectionEndOnly r.end), Cmd.none )
 
-        _ ->
-            ( Nothing, Cmd.none )
+                _ ->
+                    ( Nothing, Cmd.none )
+
+        ResetEndPoint ->
+            case section of
+                SectionRange r ->
+                    ( Just (SectionStartOnly r.start), Cmd.none )
+
+                _ ->
+                    ( Nothing, Cmd.none )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -397,6 +425,29 @@ volumeSlider model =
             []
         , text <| String.fromInt model.volume
         ]
+
+
+sectionForm : Section -> Html Msg
+sectionForm section =
+    let
+        { start, end } =
+            toRecord section
+    in
+    div
+        []
+        [ sectionStartInput (Maybe.withDefault 0.0 start)
+        ]
+        |> StyledHtml.map GotSectionMsg
+
+
+sectionStartInput : Float -> Html SectionMsg
+sectionStartInput v =
+    input
+        [ onInput (String.toFloat >> Maybe.withDefault 0.0 >> SetStartPoint)
+        , type_ "number"
+        , value (String.fromFloat v)
+        ]
+        []
 
 
 onLoadedData : Attribute Msg
