@@ -24,12 +24,18 @@ const changePlaybackRate = value => {
   dom.playbackRate = value;
 };
 
+const changeCurrentTime = value => {
+  const dom = getAudioPlayerElement();
+  dom.currentTime = value;
+}
+
 const initializeApp = region => {
   const app = Elm.Main.init({ node: region });
   app.ports.play.subscribe(play);
   app.ports.pause.subscribe(pause);
   app.ports.changeVolume.subscribe(changeVolume);
   app.ports.changePlaybackRate.subscribe(changePlaybackRate);
+  app.ports.seek.subscribe(changeCurrentTime);
 };
 
 initializeApp(document.querySelector("main"));

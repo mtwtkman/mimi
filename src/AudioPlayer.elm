@@ -10,7 +10,7 @@ module AudioPlayer exposing
     )
 
 import Html.Styled exposing (Attribute, Html, audio, br, div, i, input, option, select, text, span)
-import Html.Styled.Attributes as Attr exposing (class, controls, disabled, selected, src, type_, value)
+import Html.Styled.Attributes as Attr exposing (class, controls, step, selected, src, type_, value)
 import Html.Styled.Events exposing (on, onClick, onInput)
 import Json.Decode as D
 import Ports
@@ -19,6 +19,7 @@ import Ports
         , changeVolume
         , pause
         , play
+        , seek
         )
 
 
@@ -111,6 +112,7 @@ type Msg
     | GotCurrentTime Float
     | SelectedPlaybackRate String
     | UpdatedCurrentTime Float
+    | Seek String
 
 
 updateSection : SectionMsg -> Float -> Section -> ( Section, Cmd msg )
@@ -199,6 +201,13 @@ update msg model =
                     ( model, Cmd.none )
         UpdatedCurrentTime t ->
             ( { model | currentTime = t}, Cmd.none)
+
+        Seek v ->
+            case String.toFloat v of
+                Just currentTime ->
+                    ({ model | currentTime = currentTime}, seek currentTime)
+                Nothing ->
+                    ( model, Cmd.none )
 
 view : Model -> Html Msg
 view model =
@@ -292,11 +301,12 @@ progressBar currentTime duration =
         []
         [ input
             [ class "progress"
-            , disabled True
             , Attr.min "0.0"
             , Attr.max <| String.fromFloat duration
             , Attr.value currentTimeString
             , type_ "range"
+            , onInput Seek
+            , step "0.01"
             ]
             []
         , span
