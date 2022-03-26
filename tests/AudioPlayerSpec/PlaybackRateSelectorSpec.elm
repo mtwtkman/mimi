@@ -1,4 +1,4 @@
-module AudioPlayer.PlaybackRateSelectorSpec exposing (..)
+module AudioPlayerSpec.PlaybackRateSelectorSpec exposing (..)
 
 import AudioPlayer
     exposing

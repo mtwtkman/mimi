@@ -2,6 +2,7 @@ module AudioPlayer exposing
     ( Model
     , Msg(..)
     , Source
+    , defaultStartPoint
     , initModel
     , playbackRateChoices
     , playbackRateSelector
@@ -270,7 +271,7 @@ update msg model =
                         Just (SectionRange r) ->
                             r.start
             in
-            ( { model | currentTime = defaultStartPoint }, seek startPoint )
+            ( { model | currentTime = startPoint }, seek startPoint )
 
 
 view : Model -> Html Msg
