@@ -23,6 +23,11 @@ import Ports
         )
 
 
+defaultStartPoint : Float
+defaultStartPoint =
+    0.0
+
+
 type alias Source =
     { name : String
     , url : String
@@ -110,7 +115,7 @@ type SectionMsg
 
 
 type Msg
-    = Toggle
+    = Play
     | LoadedData Float
     | GotSectionMsg SectionMsg
     | ChangedVolume String
@@ -118,6 +123,8 @@ type Msg
     | ChangedPlaybackRate String
     | UpdatedCurrentTime Float
     | Seeked String
+    | ToggleLoopSetting
+    | ReachedEnd
 
 
 updateSection : SectionMsg -> Float -> Section -> ( Maybe Section, Cmd msg )
@@ -169,7 +176,7 @@ updateSection msg duration section =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Toggle ->
+        Play ->
             let
                 ( newState, portCommand ) =
                     case model.state of
@@ -190,7 +197,7 @@ update msg model =
                     { source | duration = Just duration }
 
                 section =
-                    SectionRange { start = 0.0, end = duration }
+                    SectionRange { start = defaultStartPoint, end = duration }
             in
             ( { model | source = newSource, section = Just section }, Cmd.none )
 
@@ -226,7 +233,15 @@ update msg model =
                     ( model, Cmd.none )
 
         UpdatedCurrentTime t ->
-            ( { model | currentTime = t }, Cmd.none )
+            let
+                cmd =
+                    if t >= Maybe.withDefault defaultStartPoint model.source.duration then
+                        Cmd.map (\_ -> ReachedEnd) Cmd.none
+
+                    else
+                        Cmd.none
+            in
+            ( { model | currentTime = t }, cmd )
 
         Seeked v ->
             case String.toFloat v of
@@ -235,6 +250,27 @@ update msg model =
 
                 Nothing ->
                     ( model, Cmd.none )
+
+        ToggleLoopSetting ->
+            ( { model | loop = not model.loop }, Cmd.none )
+
+        ReachedEnd ->
+            let
+                startPoint =
+                    case model.section of
+                        Nothing ->
+                            defaultStartPoint
+
+                        Just (SectionEndOnly _) ->
+                            defaultStartPoint
+
+                        Just (SectionStartOnly s) ->
+                            s
+
+                        Just (SectionRange r) ->
+                            r.start
+            in
+            ( { model | currentTime = defaultStartPoint }, seek startPoint )
 
 
 view : Model -> Html Msg
@@ -245,6 +281,7 @@ view model =
         [ sourceInfoView model.source
         , audioSourceView model.source
         , playerWrapperView model
+        , loopModelCheckBox model.loop
         ]
 
 
@@ -318,7 +355,7 @@ playIconView state =
                 "fa-play"
     in
     i
-        [ onClick Toggle
+        [ onClick Play
         , class <| "fa " ++ buttonIcon
         ]
         []
@@ -478,6 +515,19 @@ sectionStartInput v =
 sectionEndInput : Maybe Float -> Html SectionMsg
 sectionEndInput v =
     sectionInput v SetEndPoint ResetEndPoint
+
+
+loopModelCheckBox : Bool -> Html Msg
+loopModelCheckBox loopEnabled =
+    div []
+        [ text "loop enabled"
+        , input
+            [ type_ "checkbox"
+            , Attr.checked loopEnabled
+            , onInput (\_ -> ToggleLoopSetting)
+            ]
+            []
+        ]
 
 
 onLoadedData : Attribute Msg
