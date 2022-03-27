@@ -1,11 +1,11 @@
 module AudioPlayerSpec.UpdateSpec.ReachedEndSpec exposing (..)
 
-import Random
 import AudioPlayer exposing (Model, Msg(..), Section(..), Source, defaultStartPoint, initModel, update)
-import Shrink
 import Expect
-import Ports exposing (seek)
 import Fuzz
+import Ports exposing (seek)
+import Random
+import Shrink
 import Test exposing (..)
 import TestUtil exposing (boolGenerator)
 
@@ -18,38 +18,66 @@ doTest model startPoint expected =
     in
     Expect.equal (update ReachedEnd model) ( expected, cmd )
 
+
+maxDuration : Float
+maxDuration =
+    100.0
+
+
+minDuration : Float
+minDuration =
+    1.0
+
+
 getDuration : Model -> Float
-getDuration x = Maybe.withDefault 100.0 x.source.duration
+getDuration x =
+    Maybe.withDefault maxDuration x.source.duration
+
 
 durationGenerator : Random.Generator Float
-durationGenerator = Random.float 10.0 100.0
+durationGenerator =
+    Random.float minDuration maxDuration
 
 
 buildModel : Bool -> Float -> Model
 buildModel loop duration =
     let
-        name = "name"
-        url = "url"
-        source = Source name url (Just duration)
-        m = initModel name url
+        name =
+            "name"
+
+        url =
+            "url"
+
+        source =
+            Source name url (Just duration)
+
+        m =
+            initModel name url
     in
-        { m | source = source, loop = loop }
+    { m | source = source, loop = loop }
+
 
 modelFuzzer : Fuzz.Fuzzer Model
 modelFuzzer =
     Fuzz.custom
         (Random.map2 buildModel boolGenerator durationGenerator)
-        (\model -> Shrink.map buildModel (Shrink.bool model.loop) |> Shrink.andMap (Shrink.float (Maybe.withDefault 100.0 model.source.duration)))
+        (\model -> Shrink.map buildModel (Shrink.bool model.loop) |> Shrink.andMap (Shrink.float (Maybe.withDefault maxDuration model.source.duration)))
+
 
 noLoopModel : Float -> Model
-noLoopModel = buildModel False
+noLoopModel =
+    buildModel False
+
 
 loopEnabledModel : Float -> Model
-loopEnabledModel = buildModel True
+loopEnabledModel =
+    buildModel True
+
 
 expectRollbackToDefaultStartPoint : Model -> Model -> Expect.Expectation
 expectRollbackToDefaultStartPoint model expected =
     doTest model defaultStartPoint expected
+
 
 reachedEndSpec : Test
 reachedEndSpec =
@@ -93,13 +121,17 @@ reachedEndSpec =
             , fuzz modelFuzzer "when section range is set" <|
                 \model ->
                     let
-                        duration = getDuration model
+                        duration =
+                            getDuration model
+
                         startPoint =
                             defaultStartPoint + 0.1
+
                         sectionRangeModel =
-                            { model | section = Just (SectionRange { start = startPoint, end = duration - 0.1})}
+                            { model | section = Just (SectionRange { start = startPoint, end = duration - 0.1 }) }
+
                         expected =
-                            { sectionRangeModel | currentTime = startPoint}
+                            { sectionRangeModel | currentTime = startPoint }
                     in
                     doTest sectionRangeModel startPoint expected
             ]
