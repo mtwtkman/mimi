@@ -1,6 +1,7 @@
 module AudioPlayer exposing
     ( Model
     , Msg(..)
+    , Section(..)
     , Source
     , defaultStartPoint
     , initModel
