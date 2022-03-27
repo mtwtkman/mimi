@@ -1,9 +1,13 @@
 module AudioPlayerSpec.UpdateSpec.ReachedEndSpec exposing (..)
 
+import Random
 import AudioPlayer exposing (Model, Msg(..), Section(..), Source, defaultStartPoint, initModel, update)
+import Shrink
 import Expect
 import Ports exposing (seek)
+import Fuzz
 import Test exposing (..)
+import TestUtil exposing (boolGenerator)
 
 
 doTest : Model -> Float -> Model -> Expect.Expectation
@@ -14,6 +18,34 @@ doTest model startPoint expected =
     in
     Expect.equal (update ReachedEnd model) ( expected, cmd )
 
+getDuration : Model -> Float
+getDuration x = Maybe.withDefault 100.0 x.source.duration
+
+durationGenerator : Random.Generator Float
+durationGenerator = Random.float 10.0 100.0
+
+
+buildModel : Bool -> Float -> Model
+buildModel loop duration =
+    let
+        name = "name"
+        url = "url"
+        source = Source name url (Just duration)
+        m = initModel name url
+    in
+        { m | source = source, loop = loop }
+
+modelFuzzer : Fuzz.Fuzzer Model
+modelFuzzer =
+    Fuzz.custom
+        (Random.map2 buildModel boolGenerator durationGenerator)
+        (\model -> Shrink.map buildModel (Shrink.bool model.loop) |> Shrink.andMap (Shrink.float (Maybe.withDefault 100.0 model.source.duration)))
+
+noLoopModel : Float -> Model
+noLoopModel = buildModel False
+
+loopEnabledModel : Float -> Model
+loopEnabledModel = buildModel True
 
 expectRollbackToDefaultStartPoint : Model -> Model -> Expect.Expectation
 expectRollbackToDefaultStartPoint model expected =
@@ -21,23 +53,10 @@ expectRollbackToDefaultStartPoint model expected =
 
 reachedEndSpec : Test
 reachedEndSpec =
-    let
-        duration =
-            100.0
-
-        durationDetectedSource =
-            Source "x" "y" (Just duration)
-
-        m =
-            initModel durationDetectedSource.name durationDetectedSource.url
-
-        model =
-            { m | source = durationDetectedSource }
-    in
     describe "ReachedEnd msg"
         [ describe "rollbacks to default startpoint"
-            [ test "when section setting is none" <|
-                \_ ->
+            [ fuzz modelFuzzer "when section setting is none" <|
+                \model ->
                     let
                         noSectionModel =
                             { model | section = Nothing }
@@ -46,8 +65,8 @@ reachedEndSpec =
                             { noSectionModel | currentTime = defaultStartPoint }
                     in
                     expectRollbackToDefaultStartPoint noSectionModel expected
-            , test "when section setting is only endpoint" <|
-                \_ ->
+            , fuzz modelFuzzer "when section setting is only endpoint" <|
+                \model ->
                     let
                         sectionEndOnlyModel =
                             { model | section = Just (SectionEndOnly (defaultStartPoint + 0.1)) }
@@ -58,11 +77,11 @@ reachedEndSpec =
                     expectRollbackToDefaultStartPoint sectionEndOnlyModel expected
             ]
         , describe "rollbacks to user defined startpoint"
-            [ test "when section setting is only startpoint" <|
-                \_ ->
+            [ fuzz modelFuzzer "when section setting is only startpoint" <|
+                \model ->
                     let
                         startPoint =
-                            defaultStartPoint + 10
+                            defaultStartPoint + 0.1
 
                         sectionStartOnlyModel =
                             { model | section = Just (SectionStartOnly startPoint) }
@@ -71,11 +90,12 @@ reachedEndSpec =
                             { sectionStartOnlyModel | currentTime = startPoint }
                     in
                     doTest sectionStartOnlyModel startPoint expected
-            , test "when section range is set" <|
-                \_ ->
+            , fuzz modelFuzzer "when section range is set" <|
+                \model ->
                     let
+                        duration = getDuration model
                         startPoint =
-                            defaultStartPoint + 10
+                            defaultStartPoint + 0.1
                         sectionRangeModel =
                             { model | section = Just (SectionRange { start = startPoint, end = duration - 0.1})}
                         expected =
