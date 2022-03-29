@@ -7,7 +7,7 @@ import Ports exposing (seek)
 import Random
 import Shrink
 import Test exposing (..)
-import TestUtil.Generator exposing (boolGenerator, maxDuration, durationGenerator)
+import TestUtil.Generator exposing (boolGenerator, durationGenerator, maxDuration)
 
 
 doTest : Model -> Float -> Model -> Expect.Expectation
@@ -19,10 +19,10 @@ doTest model startPoint expected =
     Expect.equal (update ReachedEnd model) ( expected, cmd )
 
 
-
 getDuration : Model -> Float
 getDuration x =
     Maybe.withDefault maxDuration x.source.duration
+
 
 buildModel : Bool -> Float -> Model
 buildModel loop duration =

@@ -2,15 +2,15 @@ module AudioPlayer exposing
     ( Model
     , Msg(..)
     , Section(..)
+    , SectionMsg(..)
     , Source
     , defaultStartPoint
     , initModel
     , playbackRateChoices
     , playbackRateSelector
     , update
-    , view
-    , SectionMsg(..)
     , updateSection
+    , view
     )
 
 import Html.Styled as StyledHtml exposing (Attribute, Html, audio, div, i, input, option, select, span, text)
