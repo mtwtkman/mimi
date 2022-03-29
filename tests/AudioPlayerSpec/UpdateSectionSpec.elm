@@ -54,7 +54,7 @@ setStartPointHandlerSpec =
     , fuzz parameterFuzzer "makes section range when it is set only endpoint" <|
         \( duration, v, newV ) ->
             doTest duration newV (SectionRange { start = v, end = duration }) (SectionRange { start = newV, end = duration })
-    , fuzz parameterFuzzer "turns it to section range" <|
+    , fuzz parameterFuzzer "turns it to section range when it is set only endpoint" <|
         \( duration, _, newV ) ->
             doTest duration newV (SectionEndOnly duration) (SectionRange { start = newV, end = duration })
     ]
