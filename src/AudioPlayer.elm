@@ -9,6 +9,8 @@ module AudioPlayer exposing
     , playbackRateSelector
     , update
     , view
+    , SectionMsg(..)
+    , updateSection
     )
 
 import Html.Styled as StyledHtml exposing (Attribute, Html, audio, div, i, input, option, select, span, text)
