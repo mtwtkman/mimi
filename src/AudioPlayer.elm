@@ -4,12 +4,15 @@ module AudioPlayer exposing
     , Section(..)
     , SectionMsg(..)
     , Source
+    , Time
+    , UpdateSectionResult(..)
     , defaultStartPoint
     , initModel
     , playbackRateChoices
     , playbackRateSelector
     , update
     , updateSection
+    , validateSection
     , view
     )
 
@@ -62,16 +65,39 @@ type alias PlaybackRate =
     Float
 
 
+type alias Time =
+    { value : Float }
+
+
+type TimeConversionResult
+    = EndPointOverDuration
+    | NegativeTimeError
+    | ValidTime Time
+
+
 type Section
-    = SectionStartOnly Float
-    | SectionEndOnly Float
+    = SectionStartOnly Time
+    | SectionEndOnly Time
     | SectionRange
-        { start : Float
-        , end : Float
+        { start : Time
+        , end : Time
         }
 
 
-toRecord : Section -> { start : Maybe Float, end : Maybe Float }
+type UpdateSectionResult
+    = InvertSectionRangeError
+    | UpdateSectionOk Section
+    | SectionDoesNotChange
+    | CancelSectionSetting
+    | InvalidTimeError TimeConversionResult
+
+
+validateSection : Section -> UpdateSectionResult
+validateSection section =
+    UpdateSectionOk section
+
+
+toRecord : Section -> { start : Maybe Time, end : Maybe Time }
 toRecord section =
     case section of
         SectionStartOnly s ->
@@ -84,8 +110,8 @@ toRecord section =
             { start = Just r.start, end = Just r.end }
 
 
-type alias CurrentTime =
-    Float
+type AudioPlayerError
+    = SectionError UpdateSectionResult
 
 
 type alias Model =
@@ -95,7 +121,8 @@ type alias Model =
     , playbackRate : PlaybackRate
     , loop : Bool
     , volume : Volume
-    , currentTime : CurrentTime
+    , currentTime : Time
+    , error : Maybe AudioPlayerError
     }
 
 
@@ -108,7 +135,8 @@ initModel name url =
         1.0
         False
         30
-        0.0
+        (Time 0.0)
+        Nothing
 
 
 type SectionMsg
@@ -131,50 +159,86 @@ type Msg
     | ReachedEnd
 
 
-updateSection : SectionMsg -> Float -> Section -> ( Maybe Section, Cmd msg )
+toTime : Float -> Float -> TimeConversionResult
+toTime v duration =
+    if v < 0.0 then
+        NegativeTimeError
+
+    else if v > duration then
+        EndPointOverDuration
+
+    else
+        ValidTime (Time v)
+
+
+updateSection : SectionMsg -> Float -> Section -> ( UpdateSectionResult, Cmd msg )
 updateSection msg duration section =
     case msg of
-        SetStartPoint s ->
-            case section of
-                SectionStartOnly _ ->
-                    ( Just (SectionStartOnly s), Cmd.none )
+        SetStartPoint v ->
+            case toTime v duration of
+                ValidTime t ->
+                    ( UpdateSectionOk
+                        (case section of
+                            SectionStartOnly _ ->
+                                SectionStartOnly t
 
-                SectionEndOnly e ->
-                    ( Just (SectionRange { start = s, end = e }), Cmd.none )
+                            SectionEndOnly e ->
+                                SectionRange { start = t, end = e }
 
-                SectionRange r ->
-                    ( Just (SectionRange { r | start = s }), Cmd.none )
+                            SectionRange r ->
+                                SectionRange { r | start = t }
+                        )
+                    , Cmd.none
+                    )
 
-        SetEndPoint e ->
-            if e > duration then
-                ( Just section, Cmd.none )
+                err ->
+                    ( InvalidTimeError err, Cmd.none )
 
-            else
-                case section of
-                    SectionStartOnly s ->
-                        ( Just (SectionRange { start = s, end = e }), Cmd.none )
+        SetEndPoint v ->
+            case toTime v duration of
+                ValidTime t ->
+                    if t.value > duration then
+                        ( InvalidTimeError EndPointOverDuration, Cmd.none )
 
-                    SectionEndOnly _ ->
-                        ( Just (SectionEndOnly e), Cmd.none )
+                    else
+                        ( UpdateSectionOk
+                            (case section of
+                                SectionStartOnly s ->
+                                    SectionRange { start = s, end = t }
 
-                    SectionRange r ->
-                        ( Just (SectionRange { r | end = e }), Cmd.none )
+                                SectionEndOnly _ ->
+                                    SectionEndOnly t
+
+                                SectionRange r ->
+                                    SectionRange { r | end = t }
+                            )
+                        , Cmd.none
+                        )
+
+                err ->
+                    ( InvalidTimeError err, Cmd.none )
 
         ResetStartPoint ->
             case section of
                 SectionRange r ->
-                    ( Just (SectionEndOnly r.end), Cmd.none )
+                    ( UpdateSectionOk (SectionEndOnly r.end), Cmd.none )
 
-                _ ->
-                    ( Nothing, Cmd.none )
+                SectionStartOnly _ ->
+                    ( CancelSectionSetting, Cmd.none )
+
+                SectionEndOnly _ ->
+                    ( SectionDoesNotChange, Cmd.none )
 
         ResetEndPoint ->
             case section of
                 SectionRange r ->
-                    ( Just (SectionStartOnly r.start), Cmd.none )
+                    ( UpdateSectionOk (SectionStartOnly r.start), Cmd.none )
 
-                _ ->
-                    ( Nothing, Cmd.none )
+                SectionStartOnly _ ->
+                    ( SectionDoesNotChange, Cmd.none )
+
+                SectionEndOnly _ ->
+                    ( CancelSectionSetting, Cmd.none )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -201,7 +265,7 @@ update msg model =
                     { source | duration = Just duration }
 
                 section =
-                    SectionRange { start = defaultStartPoint, end = duration }
+                    SectionRange { start = Time defaultStartPoint, end = Time duration }
             in
             ( { model | source = newSource, section = Just section }, Cmd.none )
 
@@ -209,10 +273,29 @@ update msg model =
             case ( model.source.duration, model.section ) of
                 ( Just duration, Just section ) ->
                     let
-                        ( newSection, subMsg ) =
+                        ( updateSectionResult, subMsg ) =
                             updateSection sectionMsg duration section
+
+                        cmd =
+                            Cmd.map GotSectionMsg subMsg
                     in
-                    ( { model | section = newSection }, Cmd.map GotSectionMsg subMsg )
+                    ( case updateSectionResult of
+                        InvertSectionRangeError ->
+                            { model | error = Just (SectionError InvertSectionRangeError) }
+
+                        UpdateSectionOk s ->
+                            { model | section = Just s }
+
+                        SectionDoesNotChange ->
+                            model
+
+                        CancelSectionSetting ->
+                            model
+
+                        InvalidTimeError e ->
+                            { model | error = Just (SectionError (InvalidTimeError e)) }
+                    , cmd
+                    )
 
                 _ ->
                     ( model, Cmd.none )
@@ -226,7 +309,7 @@ update msg model =
                     ( model, Cmd.none )
 
         GotCurrentTime t ->
-            ( { model | currentTime = t }, Cmd.none )
+            ( { model | currentTime = Time t }, Cmd.none )
 
         ChangedPlaybackRate v ->
             case String.toFloat v of
@@ -245,12 +328,12 @@ update msg model =
                     else
                         Cmd.none
             in
-            ( { model | currentTime = t }, cmd )
+            ( { model | currentTime = Time t }, cmd )
 
         Seeked v ->
             case String.toFloat v of
-                Just currentTime ->
-                    ( { model | currentTime = currentTime }, seek currentTime )
+                Just t ->
+                    ( { model | currentTime = Time t }, seek t )
 
                 Nothing ->
                     ( model, Cmd.none )
@@ -263,10 +346,10 @@ update msg model =
                 startPoint =
                     case model.section of
                         Nothing ->
-                            defaultStartPoint
+                            Time defaultStartPoint
 
                         Just (SectionEndOnly _) ->
-                            defaultStartPoint
+                            Time defaultStartPoint
 
                         Just (SectionStartOnly s) ->
                             s
@@ -274,7 +357,7 @@ update msg model =
                         Just (SectionRange r) ->
                             r.start
             in
-            ( { model | currentTime = startPoint }, seek startPoint )
+            ( { model | currentTime = startPoint }, seek startPoint.value )
 
 
 view : Model -> Html Msg
@@ -365,11 +448,11 @@ playIconView state =
         []
 
 
-progressBar : Float -> Float -> Html Msg
+progressBar : Time -> Float -> Html Msg
 progressBar currentTime duration =
     let
         currentTimeString =
-            String.fromFloat currentTime
+            String.fromFloat currentTime.value
     in
     div
         []
@@ -488,17 +571,17 @@ sectionForm section =
         |> StyledHtml.map GotSectionMsg
 
 
-optionalFloatInputNode : Maybe Float -> (String -> msg) -> Html msg
+optionalFloatInputNode : Maybe Time -> (String -> msg) -> Html msg
 optionalFloatInputNode v msg =
     input
         [ onInput msg
         , type_ "number"
-        , (Maybe.andThen (String.fromFloat >> Just) >> Maybe.withDefault "") v |> value
+        , (Maybe.andThen (.value >> String.fromFloat >> Just) >> Maybe.withDefault "") v |> value
         ]
         []
 
 
-sectionInput : Maybe Float -> (Float -> SectionMsg) -> SectionMsg -> Html SectionMsg
+sectionInput : Maybe Time -> (Float -> SectionMsg) -> SectionMsg -> Html SectionMsg
 sectionInput v setMsg resetMsg =
     optionalFloatInputNode v
         (\inputValue ->
@@ -511,12 +594,12 @@ sectionInput v setMsg resetMsg =
         )
 
 
-sectionStartInput : Maybe Float -> Html SectionMsg
+sectionStartInput : Maybe Time -> Html SectionMsg
 sectionStartInput v =
     sectionInput v SetStartPoint ResetStartPoint
 
 
-sectionEndInput : Maybe Float -> Html SectionMsg
+sectionEndInput : Maybe Time -> Html SectionMsg
 sectionEndInput v =
     sectionInput v SetEndPoint ResetEndPoint
 

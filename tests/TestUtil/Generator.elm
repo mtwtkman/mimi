@@ -1,5 +1,6 @@
 module TestUtil.Generator exposing (..)
 
+import AudioPlayer exposing (Time)
 import Random
 
 
@@ -21,3 +22,8 @@ minDuration =
 durationGenerator : Random.Generator Float
 durationGenerator =
     Random.float minDuration maxDuration
+
+
+timeGenerator : Random.Generator Time
+timeGenerator =
+    Random.map Time durationGenerator
