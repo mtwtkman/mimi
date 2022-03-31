@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "module": "CommonJS",
+        "noImplicitAny": true,
+        "noImplicitReturns": true,
+        "removeComments": true,
+        "sourceMap": false,
+        "noUnusedParameters": true,
+        "strict": true,
+        "jsx": "react",
+    },
+    "include": ["src/**/*"],
+    "exclude": ["node_modules"]
+}
