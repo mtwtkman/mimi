@@ -4,8 +4,7 @@ import AudioPlayer
     exposing
         ( Section(..)
         , SectionMsg(..)
-        , Time
-        , UpdateSectionResult(..)
+        , SectionValidationResult(..)
         , updateSection
         )
 import Expect
@@ -13,7 +12,7 @@ import Fuzz
 import Random
 import Shrink
 import Test exposing (..)
-import TestUtil.Generator exposing (durationGenerator, minDuration, timeGenerator)
+import TestUtil.Generator exposing (durationGenerator, minDuration)
 
 
 parameterGenerator : Random.Generator ( Float, Float, Float )
@@ -37,28 +36,28 @@ parameterFuzzer =
     Fuzz.custom parameterGenerator (Shrink.tuple3 ( Shrink.float, Shrink.float, Shrink.float ))
 
 
-suite : Test
-suite =
-    describe "updateSection"
-        [ describe "SetStartPoint handler" setStartPointHandlerSpec
-        ]
+-- suite : Test
+-- suite =
+--     describe "updateSection"
+--         [ describe "SetStartPoint handler" setStartPointHandlerSpec
+--         ]
 
 
-setStartPointHandlerSpec : List Test
-setStartPointHandlerSpec =
-    let
-        doTest : Float -> Float -> Section -> UpdateSectionResult -> Expect.Expectation
-        doTest duration newV source expected =
-            let
-                actual =
-                    updateSection (SetStartPoint newV) duration source
-            in
-            Expect.equal actual ( expected, Cmd.none )
-    in
-    []
-
-
-
+-- setStartPointHandlerSpec : List Test
+-- setStartPointHandlerSpec =
+--     let
+--         doTest : Float -> Float -> Section -> SectionValidationResult -> Expect.Expectation
+--         doTest duration newV source expected =
+--             let
+--                 actual =
+--                     updateSection (SetStartPoint newV) duration source
+--             in
+--             Expect.equal actual ( expected, Cmd.none )
+--     in
+--     []
+--
+--
+--
 -- [ fuzz parameterFuzzer "overwrites startpoint when it is set only startpoint" <|
 --     \( duration, v, newV ) ->
 --         doTest duration newV (SectionStartOnly v) (SectionStartOnly newV)

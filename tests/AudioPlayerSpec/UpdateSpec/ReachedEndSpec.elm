@@ -1,6 +1,6 @@
 module AudioPlayerSpec.UpdateSpec.ReachedEndSpec exposing (..)
 
-import AudioPlayer exposing (Model, Msg(..), Section(..), Source, defaultStartPoint, initModel, update)
+import AudioPlayer exposing (Model, Msg(..), Section(..), Source, defaultStartPoint, initModel, update, Time)
 import Expect
 import Fuzz
 import Ports exposing (seek)
@@ -75,17 +75,17 @@ reachedEndSpec =
                             { model | section = Nothing }
 
                         expected =
-                            { noSectionModel | currentTime = defaultStartPoint }
+                            { noSectionModel | currentTime = Time defaultStartPoint }
                     in
                     expectRollbackToDefaultStartPoint noSectionModel expected
             , fuzz modelFuzzer "when section setting is only endpoint" <|
                 \model ->
                     let
                         sectionEndOnlyModel =
-                            { model | section = Just (SectionEndOnly (defaultStartPoint + 0.1)) }
+                            { model | section = Just (SectionEndOnly (Time (defaultStartPoint + 0.1))) }
 
                         expected =
-                            { sectionEndOnlyModel | currentTime = defaultStartPoint }
+                            { sectionEndOnlyModel | currentTime = Time defaultStartPoint }
                     in
                     expectRollbackToDefaultStartPoint sectionEndOnlyModel expected
             ]
@@ -97,10 +97,10 @@ reachedEndSpec =
                             defaultStartPoint + 0.1
 
                         sectionStartOnlyModel =
-                            { model | section = Just (SectionStartOnly startPoint) }
+                            { model | section = Just (SectionStartOnly (Time startPoint)) }
 
                         expected =
-                            { sectionStartOnlyModel | currentTime = startPoint }
+                            { sectionStartOnlyModel | currentTime = Time startPoint }
                     in
                     doTest sectionStartOnlyModel startPoint expected
             , fuzz modelFuzzer "when section range is set" <|
@@ -113,10 +113,10 @@ reachedEndSpec =
                             defaultStartPoint + 0.1
 
                         sectionRangeModel =
-                            { model | section = Just (SectionRange { start = startPoint, end = duration - 0.1 }) }
+                            { model | section = Just (SectionRange { start = Time startPoint, end = Time (duration - 0.1) }) }
 
                         expected =
-                            { sectionRangeModel | currentTime = startPoint }
+                            { sectionRangeModel | currentTime = Time startPoint }
                     in
                     doTest sectionRangeModel startPoint expected
             ]
