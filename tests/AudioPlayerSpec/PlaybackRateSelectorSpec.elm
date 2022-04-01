@@ -6,6 +6,7 @@ import AudioPlayer
         , initModel
         , playbackRateChoices
         , playbackRateSelector
+        , unwrapPlaybackRate
         )
 import Html.Attributes exposing (value)
 import Html.Styled exposing (toUnstyled)
@@ -29,12 +30,12 @@ suite =
             \_ ->
                 testableElem
                     |> Query.find [ Selector.selected True ]
-                    |> Query.has [ Selector.attribute (value (String.fromFloat model.playbackRate)) ]
+                    |> Query.has [ Selector.attribute (value (String.fromFloat (unwrapPlaybackRate model.playbackRate))) ]
         , test "emits a msg with option value" <|
             \_ ->
                 let
                     choices =
-                        List.filter (\v -> model.playbackRate /= v) playbackRateChoices
+                        List.filter (\v -> (unwrapPlaybackRate model.playbackRate) /= v) playbackRateChoices
 
                     selectedValue =
                         Maybe.withDefault 0.0 (List.head choices)

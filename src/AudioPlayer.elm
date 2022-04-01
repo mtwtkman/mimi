@@ -5,7 +5,7 @@ module AudioPlayer exposing
     , SectionMsg(..)
     , SectionValidationResult(..)
     , Source
-    , Time
+    , Time(..)
     , defaultStartPoint
     , initModel
     , playbackRateChoices
@@ -14,6 +14,10 @@ module AudioPlayer exposing
     , updateSection
     , validateSection
     , view
+    , unwrapTime
+    , unwrapPlaybackRate
+    , Name(..)
+    , Url(..)
     )
 
 import Html.Styled as StyledHtml exposing (Attribute, Html, audio, div, i, input, option, select, span, text)
@@ -30,19 +34,35 @@ import Ports
         )
 
 
-defaultStartPoint : Float
+defaultStartPoint : Time
 defaultStartPoint =
-    0.0
+    Time 0.0
 
-
+type Name = Name String
+type Url = Url String
 type alias Source =
-    { name : String
-    , url : String
-    , duration : Maybe Float
+    { name : Name
+    , url : Url
+    , duration : Maybe Time
     }
 
 
-initSource : String -> String -> Source
+unwrapName : Name -> String
+unwrapName (Name a) = a
+
+unwrapUrl : Url -> String
+unwrapUrl (Url a) = a
+
+unwrapTime : Time -> Float
+unwrapTime (Time a) = a
+
+unwrapVolume : Volume -> Int
+unwrapVolume (Volume a) = a
+
+unwrapPlaybackRate : PlaybackRate -> Float
+unwrapPlaybackRate (PlaybackRate a) = a
+
+initSource : Name -> Url -> Source
 initSource name url =
     Source name url Nothing
 
@@ -57,17 +77,11 @@ isPlaying state =
     state == Playing
 
 
-type alias Volume =
-    Int
+type Volume = Volume Int
 
+type PlaybackRate = PlaybackRate Float
 
-type alias PlaybackRate =
-    Float
-
-
-type alias Time =
-    { value : Float }
-
+type Time = Time Float
 
 type TimeConversionResult
     = EndPointOverDuration
@@ -131,10 +145,10 @@ initModel name url =
     Model
         Paused
         Nothing
-        (initSource name url)
-        1.0
+        (initSource (Name name) (Url url))
+        (PlaybackRate 1.0)
         False
-        30
+        (Volume 30)
         (Time 0.0)
         Nothing
 
@@ -159,19 +173,19 @@ type Msg
     | ReachedEnd
 
 
-toTime : Float -> Float -> TimeConversionResult
+toTime : Float -> Time -> TimeConversionResult
 toTime v duration =
     if v < 0.0 then
         NegativeTimeError
 
-    else if v > duration then
+    else if v > (unwrapTime duration) then
         EndPointOverDuration
 
     else
         ValidTime (Time v)
 
 
-updateSection : SectionMsg -> Float -> Section -> ( SectionValidationResult, Cmd msg )
+updateSection : SectionMsg -> Time -> Section -> ( SectionValidationResult, Cmd msg )
 updateSection msg duration section =
     case msg of
         SetStartPoint v ->
@@ -197,7 +211,7 @@ updateSection msg duration section =
         SetEndPoint v ->
             case toTime v duration of
                 ValidTime t ->
-                    if t.value > duration then
+                    if (unwrapTime t) > (unwrapTime duration) then
                         ( InvalidTimeError EndPointOverDuration, Cmd.none )
 
                     else
@@ -258,14 +272,15 @@ update msg model =
 
         LoadedData duration ->
             let
+                d = Time duration
                 source =
                     model.source
 
                 newSource =
-                    { source | duration = Just duration }
+                    { source | duration = Just d }
 
                 section =
-                    SectionRange { start = Time defaultStartPoint, end = Time duration }
+                    SectionRange { start = defaultStartPoint, end = d }
             in
             ( { model | source = newSource, section = Just section }, Cmd.none )
 
@@ -303,7 +318,7 @@ update msg model =
         ChangedVolume v ->
             case String.toInt v of
                 Just volume ->
-                    ( { model | volume = volume }, changeVolume () )
+                    ( { model | volume = Volume volume }, changeVolume () )
 
                 Nothing ->
                     ( model, Cmd.none )
@@ -314,7 +329,7 @@ update msg model =
         ChangedPlaybackRate v ->
             case String.toFloat v of
                 Just playbackRate ->
-                    ( { model | playbackRate = playbackRate }, changePlaybackRate playbackRate )
+                    ( { model | playbackRate = PlaybackRate playbackRate }, changePlaybackRate playbackRate )
 
                 Nothing ->
                     ( model, Cmd.none )
@@ -322,7 +337,7 @@ update msg model =
         UpdatedCurrentTime t ->
             let
                 cmd =
-                    if t >= Maybe.withDefault defaultStartPoint model.source.duration then
+                    if t >= (unwrapTime <| Maybe.withDefault defaultStartPoint model.source.duration) then
                         Cmd.map (\_ -> ReachedEnd) Cmd.none
 
                     else
@@ -346,10 +361,10 @@ update msg model =
                 startPoint =
                     case model.section of
                         Nothing ->
-                            Time defaultStartPoint
+                            defaultStartPoint
 
                         Just (SectionEndOnly _) ->
-                            Time defaultStartPoint
+                            defaultStartPoint
 
                         Just (SectionStartOnly s) ->
                             s
@@ -357,7 +372,7 @@ update msg model =
                         Just (SectionRange r) ->
                             r.start
             in
-            ( { model | currentTime = startPoint }, seek startPoint.value )
+            ( { model | currentTime = startPoint }, unwrapTime startPoint |> seek )
 
 
 view : Model -> Html Msg
@@ -375,7 +390,7 @@ view model =
 audioSourceView : Source -> Html Msg
 audioSourceView source =
     audio
-        [ src source.url
+        [ src <| unwrapUrl source.url
         , controls False
         , onLoadedData
         , class "audio-source"
@@ -427,7 +442,7 @@ sourceInfoView source =
     div
         [ class "audio-info"
         ]
-        [ text <| "filename: " ++ source.name
+        [ text <| "filename: " ++ (unwrapName source.name)
         ]
 
 
@@ -448,18 +463,18 @@ playIconView state =
         []
 
 
-progressBar : Time -> Float -> Html Msg
+progressBar : Time -> Time -> Html Msg
 progressBar currentTime duration =
     let
         currentTimeString =
-            String.fromFloat currentTime.value
+            String.fromFloat (unwrapTime currentTime)
     in
     div
         []
         [ input
             [ class "progress"
             , Attr.min "0.0"
-            , Attr.max <| String.fromFloat duration
+            , Attr.max <| String.fromFloat (unwrapTime duration)
             , Attr.value currentTimeString
             , type_ "range"
             , onInput Seeked
@@ -519,7 +534,7 @@ playbackRateSelector model =
                     in
                     option
                         [ value s
-                        , selected (v == model.playbackRate)
+                        , selected (v == (unwrapPlaybackRate model.playbackRate))
                         ]
                         [ text s
                         ]
@@ -539,6 +554,9 @@ playbackRateSelector model =
 
 volumeSlider : Model -> Html Msg
 volumeSlider model =
+    let
+        volume = unwrapVolume model.volume
+    in
     div []
         [ span
             []
@@ -547,13 +565,13 @@ volumeSlider model =
         , input
             [ class "audio-volume-slider"
             , type_ "range"
-            , value (String.fromInt model.volume)
+            , value (String.fromInt volume)
             , Attr.max "100"
             , Attr.min "0"
             , onInput ChangedVolume
             ]
             []
-        , text <| String.fromInt model.volume
+        , text <| String.fromInt volume
         ]
 
 
@@ -576,7 +594,7 @@ optionalFloatInputNode v msg =
     input
         [ onInput msg
         , type_ "number"
-        , (Maybe.andThen (.value >> String.fromFloat >> Just) >> Maybe.withDefault "") v |> value
+        , (Maybe.andThen (unwrapTime >> String.fromFloat >> Just) >> Maybe.withDefault "") v |> value
         ]
         []
 

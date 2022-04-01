@@ -1,6 +1,7 @@
 module TestUtil.Generator exposing (..)
 
-import AudioPlayer exposing (Time)
+import AudioPlayer exposing (Time(..), unwrapTime)
+import Shrink exposing (Shrinker)
 import Random
 
 
@@ -9,21 +10,26 @@ boolGenerator =
     Random.uniform True [ False ]
 
 
-maxDuration : Float
+maxDuration : Time
 maxDuration =
-    100.0
+    Time 100.0
 
 
-minDuration : Float
+minDuration : Time
 minDuration =
-    1.0
+    Time 1.0
 
 
 durationGenerator : Random.Generator Float
 durationGenerator =
-    Random.float minDuration maxDuration
+    Random.float (unwrapTime minDuration) (unwrapTime maxDuration)
 
 
 timeGenerator : Random.Generator Time
 timeGenerator =
     Random.map Time durationGenerator
+
+
+timeShrinker : Shrinker Time
+timeShrinker (Time t) =
+    Shrink.map Time (Shrink.float t)
