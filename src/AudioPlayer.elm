@@ -5,7 +5,7 @@ module AudioPlayer exposing
     , SectionMsg(..)
     , Source
     , Time
-    , UpdateSectionResult(..)
+    , SectionValidationResult(..)
     , defaultStartPoint
     , initModel
     , playbackRateChoices
@@ -84,7 +84,7 @@ type Section
         }
 
 
-type UpdateSectionResult
+type SectionValidationResult
     = InvertSectionRangeError
     | UpdateSectionOk Section
     | SectionDoesNotChange
@@ -92,7 +92,7 @@ type UpdateSectionResult
     | InvalidTimeError TimeConversionResult
 
 
-validateSection : Section -> UpdateSectionResult
+validateSection : Section -> SectionValidationResult
 validateSection section =
     UpdateSectionOk section
 
@@ -111,7 +111,7 @@ toRecord section =
 
 
 type AudioPlayerError
-    = SectionError UpdateSectionResult
+    = SectionError SectionValidationResult
 
 
 type alias Model =
@@ -171,7 +171,7 @@ toTime v duration =
         ValidTime (Time v)
 
 
-updateSection : SectionMsg -> Float -> Section -> ( UpdateSectionResult, Cmd msg )
+updateSection : SectionMsg -> Float -> Section -> ( SectionValidationResult, Cmd msg )
 updateSection msg duration section =
     case msg of
         SetStartPoint v ->
