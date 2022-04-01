@@ -36,13 +36,12 @@ parameterFuzzer =
     Fuzz.custom parameterGenerator (Shrink.tuple3 ( Shrink.float, Shrink.float, Shrink.float ))
 
 
+
 -- suite : Test
 -- suite =
 --     describe "updateSection"
 --         [ describe "SetStartPoint handler" setStartPointHandlerSpec
 --         ]
-
-
 -- setStartPointHandlerSpec : List Test
 -- setStartPointHandlerSpec =
 --     let

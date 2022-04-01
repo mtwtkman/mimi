@@ -1,6 +1,6 @@
 module AudioPlayerSpec.UpdateSpec.ReachedEndSpec exposing (..)
 
-import AudioPlayer exposing (Model, Msg(..), Section(..), Source, defaultStartPoint, initModel, update, Time)
+import AudioPlayer exposing (Model, Msg(..), Section(..), Source, Time, defaultStartPoint, initModel, update)
 import Expect
 import Fuzz
 import Ports exposing (seek)

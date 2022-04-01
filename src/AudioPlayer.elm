@@ -3,9 +3,9 @@ module AudioPlayer exposing
     , Msg(..)
     , Section(..)
     , SectionMsg(..)
+    , SectionValidationResult(..)
     , Source
     , Time
-    , SectionValidationResult(..)
     , defaultStartPoint
     , initModel
     , playbackRateChoices
