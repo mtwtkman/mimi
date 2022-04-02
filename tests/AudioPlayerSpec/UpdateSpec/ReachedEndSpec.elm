@@ -1,26 +1,26 @@
 module AudioPlayerSpec.UpdateSpec.ReachedEndSpec exposing (..)
 
-import AudioPlayer exposing
-    ( Model
-    , Msg(..)
-    , Section(..)
-    , Source
-    , Time
-    , defaultStartPoint
-    , initModel
-    , update
-    , Time(..)
-    , Name(..)
-    , Url(..)
-    , unwrapTime
-    )
+import AudioPlayer
+    exposing
+        ( Model
+        , Msg(..)
+        , Name(..)
+        , Section(..)
+        , Source
+        , Time(..)
+        , Url(..)
+        , defaultStartPoint
+        , initModel
+        , unwrapTime
+        , update
+        )
 import Expect
 import Fuzz
 import Ports exposing (seek)
 import Random
 import Shrink
 import Test exposing (..)
-import TestUtil.Generator exposing (boolGenerator, timeGenerator, maxDuration, timeShrinker)
+import TestUtil.Generator exposing (boolGenerator, maxDuration, timeGenerator, timeShrinker)
 
 
 doTest : Model -> Time -> Model -> Expect.Expectation
@@ -59,7 +59,7 @@ modelFuzzer : Fuzz.Fuzzer Model
 modelFuzzer =
     Fuzz.custom
         (Random.map2 buildModel boolGenerator timeGenerator)
-        ( \model ->
+        (\model ->
             Shrink.map buildModel (Shrink.bool model.loop)
                 |> Shrink.andMap (timeShrinker (Maybe.withDefault maxDuration model.source.duration))
         )
@@ -116,7 +116,7 @@ reachedEndSpec =
                             { model | section = Just (SectionStartOnly startPoint) }
 
                         expected =
-                            { sectionStartOnlyModel | currentTime = startPoint}
+                            { sectionStartOnlyModel | currentTime = startPoint }
                     in
                     doTest sectionStartOnlyModel startPoint expected
             , fuzz modelFuzzer "when section range is set" <|

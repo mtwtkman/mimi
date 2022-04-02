@@ -5,9 +5,9 @@ import AudioPlayer
         ( Section(..)
         , SectionMsg(..)
         , SectionValidationResult(..)
-        , updateSection
         , Time(..)
         , unwrapTime
+        , updateSection
         )
 import Expect
 import Fuzz
@@ -23,7 +23,7 @@ parameterGenerator =
         (\duration ->
             let
                 v =
-                    (unwrapTime duration) - (unwrapTime minDuration - 0.001)
+                    unwrapTime duration - (unwrapTime minDuration - 0.001)
 
                 newV =
                     v - 0.0001
@@ -35,8 +35,7 @@ parameterGenerator =
 
 parameterFuzzer : Fuzz.Fuzzer ( Time, Time, Time )
 parameterFuzzer =
-    Fuzz.custom parameterGenerator (Shrink.tuple3 ( timeShrinker, timeShrinker, timeShrinker))
-
+    Fuzz.custom parameterGenerator (Shrink.tuple3 ( timeShrinker, timeShrinker, timeShrinker ))
 
 
 suite : Test
@@ -44,6 +43,8 @@ suite =
     describe "updateSection"
         [ describe "SetStartPoint handler" setStartPointHandlerSpec
         ]
+
+
 setStartPointHandlerSpec : List Test
 setStartPointHandlerSpec =
     let

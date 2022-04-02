@@ -16,6 +16,3 @@ port changePlaybackRate : Float -> Cmd msg
 
 
 port seek : Float -> Cmd msg
-
-
-port updateCurrentTime : () -> Cmd msg

@@ -1,23 +1,23 @@
 module AudioPlayer exposing
     ( Model
     , Msg(..)
+    , Name(..)
     , Section(..)
     , SectionMsg(..)
     , SectionValidationResult(..)
     , Source
     , Time(..)
+    , Url(..)
     , defaultStartPoint
     , initModel
     , playbackRateChoices
     , playbackRateSelector
+    , unwrapPlaybackRate
+    , unwrapTime
     , update
     , updateSection
     , validateSection
     , view
-    , unwrapTime
-    , unwrapPlaybackRate
-    , Name(..)
-    , Url(..)
     )
 
 import Html.Styled as StyledHtml exposing (Attribute, Html, audio, div, i, input, option, select, span, text)
@@ -38,8 +38,15 @@ defaultStartPoint : Time
 defaultStartPoint =
     Time 0.0
 
-type Name = Name String
-type Url = Url String
+
+type Name
+    = Name String
+
+
+type Url
+    = Url String
+
+
 type alias Source =
     { name : Name
     , url : Url
@@ -48,19 +55,29 @@ type alias Source =
 
 
 unwrapName : Name -> String
-unwrapName (Name a) = a
+unwrapName (Name a) =
+    a
+
 
 unwrapUrl : Url -> String
-unwrapUrl (Url a) = a
+unwrapUrl (Url a) =
+    a
+
 
 unwrapTime : Time -> Float
-unwrapTime (Time a) = a
+unwrapTime (Time a) =
+    a
+
 
 unwrapVolume : Volume -> Int
-unwrapVolume (Volume a) = a
+unwrapVolume (Volume a) =
+    a
+
 
 unwrapPlaybackRate : PlaybackRate -> Float
-unwrapPlaybackRate (PlaybackRate a) = a
+unwrapPlaybackRate (PlaybackRate a) =
+    a
+
 
 initSource : Name -> Url -> Source
 initSource name url =
@@ -77,11 +94,17 @@ isPlaying state =
     state == Playing
 
 
-type Volume = Volume Int
+type Volume
+    = Volume Int
 
-type PlaybackRate = PlaybackRate Float
 
-type Time = Time Float
+type PlaybackRate
+    = PlaybackRate Float
+
+
+type Time
+    = Time Float
+
 
 type TimeConversionResult
     = EndPointOverDuration
@@ -178,7 +201,7 @@ toTime v duration =
     if v < 0.0 then
         NegativeTimeError
 
-    else if v > (unwrapTime duration) then
+    else if v > unwrapTime duration then
         EndPointOverDuration
 
     else
@@ -211,7 +234,7 @@ updateSection msg duration section =
         SetEndPoint v ->
             case toTime v duration of
                 ValidTime t ->
-                    if (unwrapTime t) > (unwrapTime duration) then
+                    if unwrapTime t > unwrapTime duration then
                         ( InvalidTimeError EndPointOverDuration, Cmd.none )
 
                     else
@@ -272,7 +295,9 @@ update msg model =
 
         LoadedData duration ->
             let
-                d = Time duration
+                d =
+                    Time duration
+
                 source =
                     model.source
 
@@ -442,7 +467,7 @@ sourceInfoView source =
     div
         [ class "audio-info"
         ]
-        [ text <| "filename: " ++ (unwrapName source.name)
+        [ text <| "filename: " ++ unwrapName source.name
         ]
 
 
@@ -534,7 +559,7 @@ playbackRateSelector model =
                     in
                     option
                         [ value s
-                        , selected (v == (unwrapPlaybackRate model.playbackRate))
+                        , selected (v == unwrapPlaybackRate model.playbackRate)
                         ]
                         [ text s
                         ]
@@ -555,7 +580,8 @@ playbackRateSelector model =
 volumeSlider : Model -> Html Msg
 volumeSlider model =
     let
-        volume = unwrapVolume model.volume
+        volume =
+            unwrapVolume model.volume
     in
     div []
         [ span

@@ -35,7 +35,7 @@ suite =
             \_ ->
                 let
                     choices =
-                        List.filter (\v -> (unwrapPlaybackRate model.playbackRate) /= v) playbackRateChoices
+                        List.filter (\v -> unwrapPlaybackRate model.playbackRate /= v) playbackRateChoices
 
                     selectedValue =
                         Maybe.withDefault 0.0 (List.head choices)
