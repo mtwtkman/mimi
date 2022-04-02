@@ -2,14 +2,14 @@
 
 distdir="dist"
 appjs="app.js"
-initjs="init.js"
+portsjs="ports.js"
 builtappjs="$distdir/$appjs"
-builtinitjs="$distdir/$initjs"
+builtportsjs="$distdir/$portsjs"
 
 process_js() {
   mkdir -p $distdir
   elm make $1 src/Main.elm --output $builtappjs
-  cp "src/$initjs" $builtinitjs
+  cp "src/$portsjs" $builtportsjs
 }
 
 cmd=$1
@@ -21,8 +21,8 @@ case $cmd in
     npx uglifyjs $builtappjs \
       --compress 'pure_funcs=[F2,F3,F4,F5,F6,F7,F8,F9,A2,A3,A4,A5,A6,A7,A8,A9],pure_getters,keep_fargs=false,unsafe_comps,unsafe' |\
        npx uglifyjs --mangle --output $builtappjs
-    echo "uglify $builtinitjs"
-    npx uglifyjs --compress --mangle --output $builtinitjs -- $builtinitjs
+    echo "uglify $builtportsjs"
+    npx uglifyjs --compress --mangle --output $builtportsjs -- $builtportsjs
     runghc Bundle
     ;;
   dev|d)
