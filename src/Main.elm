@@ -1,6 +1,6 @@
 module Main exposing (main)
 
-import AudioPlayer as AP
+import AudioPlayer as AP exposing (Url(..), Name(..))
 import Browser
 import Css exposing (backgroundColor, height, hex, px, width)
 import File exposing (File)
@@ -75,7 +75,7 @@ update msg model =
         BuildFileUrl ( url, fileObj ) ->
             let
                 audioPlayerModel =
-                    AP.initModel (File.name fileObj) url
+                    AP.initModel (Name (File.name fileObj)) (Url url)
             in
             ( { model | audioPlayer = Just audioPlayerModel }, Cmd.none )
 

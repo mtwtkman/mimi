@@ -10,59 +10,46 @@ import AudioPlayer
         , updateSection
         )
 import Expect
-import Fuzz
-import Random
-import Shrink
 import Test exposing (..)
-import TestUtil.Generator exposing (minDuration, timeGenerator, timeShrinker)
+import TestUtil.Fuzzer as F
+import Fuzz
 
-
-parameterGenerator : Random.Generator ( Time, Time, Time )
-parameterGenerator =
-    Random.map
+parameter : Fuzz.Fuzzer (Time, Time, Time)
+parameter =
+    Fuzz.map
         (\duration ->
             let
-                v =
-                    unwrapTime duration - (unwrapTime minDuration - 0.001)
-
-                newV =
-                    v - 0.0001
+                rawDuration = unwrapTime duration
+                currentValue = rawDuration / 2
+                newValue = currentValue + 0.01
             in
-            ( duration, Time v, Time newV )
-        )
-        timeGenerator
 
-
-parameterFuzzer : Fuzz.Fuzzer ( Time, Time, Time )
-parameterFuzzer =
-    Fuzz.custom parameterGenerator (Shrink.tuple3 ( timeShrinker, timeShrinker, timeShrinker ))
-
+            (duration, Time currentValue, Time newValue))
+        F.duration
 
 suite : Test
 suite =
     describe "updateSection"
-        [ describe "SetStartPoint handler" setStartPointHandlerSpec
+        [ describe "SetStartPoint handler handles without error and" setStartPointHandlerCorrectlySpec
         ]
 
-
-setStartPointHandlerSpec : List Test
-setStartPointHandlerSpec =
+doTest : Time -> Time -> Section -> SectionValidationResult -> Expect.Expectation
+doTest duration newValue section expected =
     let
-        doTest : Time -> Time -> Section -> SectionValidationResult -> Expect.Expectation
-        doTest duration newV source expected =
-            let
-                actual =
-                    updateSection (SetStartPoint (unwrapTime newV)) duration source
-            in
-            Expect.equal actual ( expected, Cmd.none )
+        actual =
+            updateSection (SetStartPoint (unwrapTime newValue)) duration section
     in
-    [ fuzz parameterFuzzer "overwrites startpoint when it is set only startpoint" <|
-        \( duration, v, newV ) ->
-            doTest duration newV (SectionStartOnly v) (UpdateSectionOk (SectionStartOnly newV))
-    , fuzz parameterFuzzer "makes section range when it is set only endpoint" <|
-        \( duration, v, newV ) ->
-            doTest duration newV (SectionRange { start = v, end = duration }) (UpdateSectionOk (SectionRange { start = newV, end = duration }))
-    , fuzz parameterFuzzer "turns it to section range when it is set only endpoint" <|
-        \( duration, _, newV ) ->
-            doTest duration newV (SectionEndOnly duration) (UpdateSectionOk (SectionRange { start = newV, end = duration }))
+    Expect.equal actual ( expected, Cmd.none )
+
+setStartPointHandlerCorrectlySpec : List Test
+setStartPointHandlerCorrectlySpec =
+    [ fuzz parameter "overwrites startpoint when it is set only startpoint" <|
+        \( duration, currentValue, newValue ) ->
+            doTest duration newValue (SectionStartOnly currentValue) (UpdateSectionOk (SectionStartOnly newValue))
+    , fuzz parameter "updates section range startpoint when it is set section range already" <|
+        \( duration, currentValue, newValue ) ->
+            doTest duration newValue (SectionRange { start = currentValue, end = duration }) (UpdateSectionOk (SectionRange { start = newValue, end = duration }))
+    , fuzz parameter "turns it to section range when it is set only endpoint" <|
+        \( duration, _, newValue ) ->
+            doTest duration newValue (SectionEndOnly duration) (UpdateSectionOk (SectionRange { start = newValue, end = duration }))
     ]

@@ -3,7 +3,7 @@ module AudioPlayerSpec.UpdateCurrentTimeSpec exposing (..)
 import AudioPlayer exposing (Msg(..), update)
 import Expect
 import Test exposing (..)
-import TestUtil.Generator exposing (timeGenerator)
+import TestUtil.Generator exposing (duration)
 
 
 suite : Test

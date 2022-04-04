@@ -18,6 +18,10 @@ module AudioPlayer exposing
     , updateSection
     , validateSection
     , view
+    , PlaybackRate(..)
+    , Volume(..)
+    , State(..)
+    , AudioPlayerError(..)
     )
 
 import Html.Styled as StyledHtml exposing (Attribute, Html, audio, div, i, input, option, select, span, text)
@@ -163,12 +167,12 @@ type alias Model =
     }
 
 
-initModel : String -> String -> Model
+initModel : Name -> Url -> Model
 initModel name url =
     Model
         Paused
         Nothing
-        (initSource (Name name) (Url url))
+        (initSource name url)
         (PlaybackRate 1.0)
         False
         (Volume 30)
