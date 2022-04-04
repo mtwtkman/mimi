@@ -1,13 +1,17 @@
 module AudioPlayer exposing
-    ( Model
+    ( AudioPlayerError(..)
+    , Model
     , Msg(..)
     , Name(..)
+    , PlaybackRate(..)
     , Section(..)
     , SectionMsg(..)
     , SectionValidationResult(..)
     , Source
+    , State(..)
     , Time(..)
     , Url(..)
+    , Volume(..)
     , defaultStartPoint
     , initModel
     , playbackRateChoices
@@ -18,10 +22,6 @@ module AudioPlayer exposing
     , updateSection
     , validateSection
     , view
-    , PlaybackRate(..)
-    , Volume(..)
-    , State(..)
-    , AudioPlayerError(..)
     )
 
 import Html.Styled as StyledHtml exposing (Attribute, Html, audio, div, i, input, option, select, span, text)

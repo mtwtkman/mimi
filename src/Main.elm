@@ -1,6 +1,6 @@
 module Main exposing (main)
 
-import AudioPlayer as AP exposing (Url(..), Name(..))
+import AudioPlayer as AP exposing (Name(..), Url(..))
 import Browser
 import Css exposing (backgroundColor, height, hex, px, width)
 import File exposing (File)

@@ -3,17 +3,19 @@ module TestUtil.Fuzzer exposing
     , initialModel
     )
 
-import AudioPlayer exposing
-    ( Model
-    , Time(..)
-    , Name(..)
-    , Url(..)
-    , initModel
-    )
-import TestUtil.Generator as Gen
+import AudioPlayer
+    exposing
+        ( Model
+        , Name(..)
+        , Time(..)
+        , Url(..)
+        , initModel
+        )
 import Fuzz
-import TestUtil.Shrink exposing (name, url, time)
 import Shrink
+import TestUtil.Generator as Gen
+import TestUtil.Shrink exposing (name, time, url)
+
 
 duration : Fuzz.Fuzzer Time
 duration =
@@ -25,6 +27,6 @@ initialModel =
     Fuzz.custom
         Gen.initialModel
         (\model ->
-            Shrink.map initModel ( name model.source.name )
+            Shrink.map initModel (name model.source.name)
                 |> Shrink.andMap (url model.source.url)
         )

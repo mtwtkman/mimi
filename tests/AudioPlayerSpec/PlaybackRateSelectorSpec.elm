@@ -2,11 +2,11 @@ module AudioPlayerSpec.PlaybackRateSelectorSpec exposing (..)
 
 import AudioPlayer
     exposing
-        ( Msg(..)
+        ( Model
+        , Msg(..)
         , playbackRateChoices
         , playbackRateSelector
         , unwrapPlaybackRate
-        , Model
         )
 import Html.Attributes exposing (value)
 import Html.Styled exposing (toUnstyled)
@@ -16,8 +16,11 @@ import Test.Html.Query as Query
 import Test.Html.Selector as Selector
 import TestUtil.Fuzzer exposing (initialModel)
 
+
 testableElem : Model -> Query.Single Msg
-testableElem model = playbackRateSelector model |> toUnstyled |> Query.fromHtml
+testableElem model =
+    playbackRateSelector model |> toUnstyled |> Query.fromHtml
+
 
 suite : Test
 suite =

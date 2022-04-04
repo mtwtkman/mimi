@@ -10,28 +10,36 @@ import AudioPlayer
         , updateSection
         )
 import Expect
+import Fuzz
 import Test exposing (..)
 import TestUtil.Fuzzer as F
-import Fuzz
 
-parameter : Fuzz.Fuzzer (Time, Time, Time)
+
+parameter : Fuzz.Fuzzer ( Time, Time, Time )
 parameter =
     Fuzz.map
         (\duration ->
             let
-                rawDuration = unwrapTime duration
-                currentValue = rawDuration / 2
-                newValue = currentValue + 0.01
-            in
+                rawDuration =
+                    unwrapTime duration
 
-            (duration, Time currentValue, Time newValue))
+                currentValue =
+                    rawDuration / 2
+
+                newValue =
+                    currentValue + 0.01
+            in
+            ( duration, Time currentValue, Time newValue )
+        )
         F.duration
+
 
 suite : Test
 suite =
     describe "updateSection"
         [ describe "SetStartPoint handler handles without error and" setStartPointHandlerCorrectlySpec
         ]
+
 
 doTest : Time -> Time -> Section -> SectionValidationResult -> Expect.Expectation
 doTest duration newValue section expected =
@@ -40,6 +48,7 @@ doTest duration newValue section expected =
             updateSection (SetStartPoint (unwrapTime newValue)) duration section
     in
     Expect.equal actual ( expected, Cmd.none )
+
 
 setStartPointHandlerCorrectlySpec : List Test
 setStartPointHandlerCorrectlySpec =
