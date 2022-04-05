@@ -35,6 +35,6 @@ case $cmd in
     ;;
   reactor|w) elm reactor;;
   format|f) elm-format --yes src/*.elm tests/*;;
-  test|t) elm-test;;
+  test|t) elm-test $@;;
   *) echo -n 'unknown command';
 esac

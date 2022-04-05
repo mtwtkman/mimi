@@ -16,6 +16,7 @@ module AudioPlayer exposing
     , initModel
     , playbackRateChoices
     , playbackRateSelector
+    , reachEnd
     , unwrapPlaybackRate
     , unwrapTime
     , update
@@ -197,7 +198,6 @@ type Msg
     | UpdatedCurrentTime Float
     | Seeked String
     | ToggleLoopSetting
-    | ReachedEnd
 
 
 toTime : Float -> Time -> TimeConversionResult
@@ -280,6 +280,26 @@ updateSection msg duration section =
 
                 SectionEndOnly _ ->
                     ( CancelSectionSetting, Cmd.none )
+
+
+reachEnd : Model -> Model
+reachEnd model =
+    let
+        startPoint =
+            case model.section of
+                Nothing ->
+                    defaultStartPoint
+
+                Just (SectionEndOnly _) ->
+                    defaultStartPoint
+
+                Just (SectionStartOnly s) ->
+                    s
+
+                Just (SectionRange r) ->
+                    r.start
+    in
+    { model | currentTime = startPoint }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -365,14 +385,14 @@ update msg model =
 
         UpdatedCurrentTime t ->
             let
-                cmd =
+                newModel =
                     if t >= (unwrapTime <| Maybe.withDefault defaultStartPoint model.source.duration) then
-                        Cmd.map (\_ -> ReachedEnd) Cmd.none
+                        reachEnd model
 
                     else
-                        Cmd.none
+                        { model | currentTime = Time t }
             in
-            ( { model | currentTime = Time t }, cmd )
+            ( newModel, Cmd.none )
 
         Seeked v ->
             case String.toFloat v of
@@ -384,24 +404,6 @@ update msg model =
 
         ToggleLoopSetting ->
             ( { model | loop = not model.loop }, Cmd.none )
-
-        ReachedEnd ->
-            let
-                startPoint =
-                    case model.section of
-                        Nothing ->
-                            defaultStartPoint
-
-                        Just (SectionEndOnly _) ->
-                            defaultStartPoint
-
-                        Just (SectionStartOnly s) ->
-                            s
-
-                        Just (SectionRange r) ->
-                            r.start
-            in
-            ( { model | currentTime = startPoint }, unwrapTime startPoint |> seek )
 
 
 view : Model -> Html Msg
