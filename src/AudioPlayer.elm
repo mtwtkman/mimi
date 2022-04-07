@@ -29,12 +29,10 @@ import Html.Styled as StyledHtml exposing (Attribute, Html, audio, div, i, input
 import Html.Styled.Attributes as Attr exposing (class, controls, selected, src, step, type_, value)
 import Html.Styled.Events exposing (on, onClick, onInput)
 import Json.Decode as D
-import Ports
+import Ports as P
     exposing
         ( changePlaybackRate
         , changeVolume
-        , pause
-        , play
         , seek
         )
 
@@ -302,20 +300,35 @@ reachEnd model =
     { model | currentTime = startPoint }
 
 
+pause : Model -> Model
+pause model =
+    { model | state = Paused }
+
+
+play : Model -> Model
+play model =
+    { model | state = Playing }
+
+
+rollback : Model -> Model
+rollback =
+    reachEnd >> pause
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Play ->
             let
-                ( newState, portCommand ) =
+                ( stateController, portCommand ) =
                     case model.state of
                         Playing ->
-                            ( Paused, pause )
+                            ( pause, P.pause )
 
                         Paused ->
-                            ( Playing, play )
+                            ( play, P.play )
             in
-            ( { model | state = newState }, portCommand () )
+            ( stateController model, portCommand () )
 
         LoadedData duration ->
             let
@@ -387,7 +400,7 @@ update msg model =
             let
                 newModel =
                     if t >= (unwrapTime <| Maybe.withDefault defaultStartPoint model.source.duration) then
-                        reachEnd model
+                        rollback model
 
                     else
                         { model | currentTime = Time t }
