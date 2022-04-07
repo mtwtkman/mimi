@@ -1,4 +1,4 @@
-module AudioPlayerSpec.ReachEndSpec exposing (..)
+module AudioPlayerSpec.RollbackSpec exposing (..)
 
 import AudioPlayer
     exposing
@@ -8,7 +8,7 @@ import AudioPlayer
         , Url(..)
         , defaultStartPoint
         , initModel
-        , reachEnd
+        , rollback
         )
 import Expect
 import Test exposing (..)
@@ -22,7 +22,7 @@ model dur =
 
 suite : Test
 suite =
-    describe "reachEnd"
+    describe "rollback"
         (rollbackToDefaultStartPointSpec
             ++ rollbackToSetStartPointSpec
         )
@@ -30,7 +30,7 @@ suite =
 
 doTest : Time -> Model -> Expect.Expectation
 doTest expected m =
-    Expect.equal (reachEnd m).currentTime expected
+    Expect.equal (rollback m).currentTime expected
 
 
 rollbackToDefaultStartPointSpec : List Test

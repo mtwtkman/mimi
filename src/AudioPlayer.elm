@@ -16,7 +16,7 @@ module AudioPlayer exposing
     , initModel
     , playbackRateChoices
     , playbackRateSelector
-    , reachEnd
+    , rollback
     , unwrapPlaybackRate
     , unwrapTime
     , update
@@ -280,8 +280,8 @@ updateSection msg duration section =
                     ( CancelSectionSetting, Cmd.none )
 
 
-reachEnd : Model -> Model
-reachEnd model =
+rollback : Model -> Model
+rollback model =
     let
         startPoint =
             case model.section of
@@ -300,35 +300,35 @@ reachEnd model =
     { model | currentTime = startPoint }
 
 
-pause : Model -> Model
+loopEnabled : Model -> Bool
+loopEnabled =
+    .loop
+
+
+pause : Model -> (Model, Cmd Msg)
 pause model =
-    { model | state = Paused }
+    ( { model | state = Paused }
+    , P.pause ()
+    )
 
 
-play : Model -> Model
+play : Model -> (Model, Cmd Msg)
 play model =
-    { model | state = Playing }
-
-
-rollback : Model -> Model
-rollback =
-    reachEnd >> pause
+    ( { model | state = Playing }
+    , P.play ()
+    )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Play ->
-            let
-                ( stateController, portCommand ) =
-                    case model.state of
-                        Playing ->
-                            ( pause, P.pause )
-
-                        Paused ->
-                            ( play, P.play )
-            in
-            ( stateController model, portCommand () )
+            model |>
+                case model.state of
+                    Playing ->
+                        pause
+                    Paused ->
+                        play
 
         LoadedData duration ->
             let
@@ -398,14 +398,30 @@ update msg model =
 
         UpdatedCurrentTime t ->
             let
-                newModel =
-                    if t >= (unwrapTime <| Maybe.withDefault defaultStartPoint model.source.duration) then
-                        rollback model
+                isReachedEnd =
+                    t >= (unwrapTime <| Maybe.withDefault defaultStartPoint model.source.duration)
 
+                newModel =
+                    if isReachedEnd then
+                        rollback model
                     else
                         { model | currentTime = Time t }
+
+                cmd =
+                    let
+                        seekToStartPoint = seek (unwrapTime newModel.currentTime)
+                    in
+                    case (isReachedEnd, loopEnabled model) of
+                        (True, True) ->
+                            Cmd.batch
+                                [ seekToStartPoint
+                                , P.play ()
+                                ]
+                        (True, False) -> seekToStartPoint
+                        _ ->
+                            Cmd.none
             in
-            ( newModel, Cmd.none )
+            ( newModel, cmd )
 
         Seeked v ->
             case String.toFloat v of
@@ -427,7 +443,7 @@ view model =
         [ sourceInfoView model.source
         , audioSourceView model.source
         , playerWrapperView model
-        , loopModelCheckBox model.loop
+        , loopOptionCheckBox model
         ]
 
 
@@ -667,13 +683,13 @@ sectionEndInput v =
     sectionInput v SetEndPoint ResetEndPoint
 
 
-loopModelCheckBox : Bool -> Html Msg
-loopModelCheckBox loopEnabled =
+loopOptionCheckBox : Model -> Html Msg
+loopOptionCheckBox model =
     div []
         [ text "loop enabled"
         , input
             [ type_ "checkbox"
-            , Attr.checked loopEnabled
+            , Attr.checked (loopEnabled model)
             , onInput (\_ -> ToggleLoopSetting)
             ]
             []
