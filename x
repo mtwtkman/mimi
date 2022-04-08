@@ -26,6 +26,10 @@ case $cmd in
     npx uglifyjs --compress --mangle --output $builtportsjs -- $builtportsjs
     runghc Bundle
     ;;
+  ghpage)
+    ./x publish
+    cp ./mediaplayer/index.html .
+    ;;
   dev|d)
     process_js "--debug"
     runghc Bundle
