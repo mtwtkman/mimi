@@ -8,13 +8,14 @@ builtportsjs="$distdir/$portsjs"
 
 process_js() {
   mkdir -p $distdir
-  elm make $1 src/Main.elm --output $builtappjs
+  npx elm make $1 src/Main.elm --output $builtappjs
   cp "src/$portsjs" $builtportsjs
 }
 
 cmd=$1
 shift
 case $cmd in
+  setup) npm i;;
   publish|p)
     process_js "--optimize"
     echo "uglify $builtappjs"
@@ -33,8 +34,8 @@ case $cmd in
     ./x dev
     python3 -m http.server -d mediaplayer 55301
     ;;
-  reactor|w) elm reactor;;
-  format|f) elm-format --yes src/*.elm tests/*;;
-  test|t) elm-test $@;;
+  reactor|w) npx elm reactor;;
+  format|f) npx elm-format --yes src/*.elm tests/*;;
+  test|t) npx elm-test $@;;
   *) echo -n 'unknown command';
 esac
