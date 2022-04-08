@@ -11,14 +11,11 @@ import AudioPlayer
         , Time(..)
         , Url(..)
         , initModel
-        , unwrapDuration
         )
 import Fuzz
-import Random
 import Shrink
 import TestUtil.Generator as Gen
 import TestUtil.Shrink as S exposing (name, time, url)
-import TestUtil.Transform exposing (fixDuration)
 
 
 duration : Fuzz.Fuzzer Time

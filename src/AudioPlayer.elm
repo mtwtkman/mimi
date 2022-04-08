@@ -342,8 +342,8 @@ isReachedEnd model =
             Just (SectionEndOnly e) ->
                 e
 
-            Just (SectionRange { start, end }) ->
-                end
+            Just (SectionRange r) ->
+                r.end
 
             _ ->
                 fallbackDefaultStartPoint model.source.duration
