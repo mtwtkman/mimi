@@ -223,7 +223,7 @@ type Msg
     | ChangedVolume String
     | ChangedCurrentTime Float
     | ChangedPlaybackRate String
-    | UpdatedCurrentTime Float
+    | SyncCurrentTime Float
     | Seeked String
     | ToggleLoopSetting
 
@@ -447,7 +447,7 @@ update msg model =
                 Nothing ->
                     ( model, Cmd.none )
 
-        UpdatedCurrentTime t ->
+        SyncCurrentTime t ->
             let
                 currentPosition =
                     { model | currentTime = Time t }
@@ -762,4 +762,4 @@ onLoadedData =
 
 onCurrentTimeUpdate : Attribute Msg
 onCurrentTimeUpdate =
-    on "timeupdate" (D.map UpdatedCurrentTime (D.at [ "target", "currentTime" ] D.float))
+    on "timeupdate" (D.map SyncCurrentTime (D.at [ "target", "currentTime" ] D.float))
