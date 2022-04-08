@@ -221,7 +221,7 @@ type Msg
     | LoadedData Float
     | GotSectionMsg SectionMsg
     | ChangedVolume String
-    | GotCurrentTime Float
+    | ChangedCurrentTime Float
     | ChangedPlaybackRate String
     | UpdatedCurrentTime Float
     | Seeked String
@@ -436,7 +436,7 @@ update msg model =
                 Nothing ->
                     ( model, Cmd.none )
 
-        GotCurrentTime t ->
+        ChangedCurrentTime t ->
             ( { model | currentTime = Time t }, Cmd.none )
 
         ChangedPlaybackRate v ->
