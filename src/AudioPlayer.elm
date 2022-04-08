@@ -14,9 +14,14 @@ module AudioPlayer exposing
     , Volume(..)
     , defaultStartPoint
     , initModel
+    , isReachedEnd
     , playbackRateChoices
     , playbackRateSelector
     , rollback
+    , sectionEndOnlyFromFloat
+    , sectionRangeFromFloat
+    , sectionStartOnlyFromFloat
+    , unwrapDuration
     , unwrapPlaybackRate
     , unwrapTime
     , update
@@ -82,6 +87,16 @@ unwrapPlaybackRate (PlaybackRate a) =
     a
 
 
+fallbackDefaultStartPoint : Maybe Time -> Time
+fallbackDefaultStartPoint =
+    Maybe.withDefault defaultStartPoint
+
+
+unwrapDuration : Model -> Float
+unwrapDuration =
+    .source >> .duration >> fallbackDefaultStartPoint >> unwrapTime
+
+
 initSource : Name -> Url -> Source
 initSource name url =
     Source name url Nothing
@@ -122,6 +137,21 @@ type Section
         { start : Time
         , end : Time
         }
+
+
+sectionStartOnlyFromFloat : Float -> Section
+sectionStartOnlyFromFloat =
+    Time >> SectionStartOnly
+
+
+sectionEndOnlyFromFloat : Float -> Section
+sectionEndOnlyFromFloat =
+    Time >> SectionEndOnly
+
+
+sectionRangeFromFloat : Float -> Float -> Section
+sectionRangeFromFloat s e =
+    SectionRange { start = Time s, end = Time e }
 
 
 type SectionValidationResult
@@ -300,19 +330,38 @@ rollback model =
     { model | currentTime = startPoint }
 
 
+isReachedEnd : Model -> Bool
+isReachedEnd model =
+    let
+        comp : Time -> Bool
+        comp ep =
+            unwrapTime model.currentTime >= unwrapTime ep
+    in
+    comp <|
+        case model.section of
+            Just (SectionEndOnly e) ->
+                e
+
+            Just (SectionRange { start, end }) ->
+                end
+
+            _ ->
+                fallbackDefaultStartPoint model.source.duration
+
+
 loopEnabled : Model -> Bool
 loopEnabled =
     .loop
 
 
-pause : Model -> (Model, Cmd Msg)
+pause : Model -> ( Model, Cmd Msg )
 pause model =
     ( { model | state = Paused }
     , P.pause ()
     )
 
 
-play : Model -> (Model, Cmd Msg)
+play : Model -> ( Model, Cmd Msg )
 play model =
     ( { model | state = Playing }
     , P.play ()
@@ -323,12 +372,14 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Play ->
-            model |>
-                case model.state of
-                    Playing ->
-                        pause
-                    Paused ->
-                        play
+            model
+                |> (case model.state of
+                        Playing ->
+                            pause
+
+                        Paused ->
+                            play
+                   )
 
         LoadedData duration ->
             let
@@ -398,26 +449,34 @@ update msg model =
 
         UpdatedCurrentTime t ->
             let
-                isReachedEnd =
-                    t >= (unwrapTime <| Maybe.withDefault defaultStartPoint model.source.duration)
+                currentPosition =
+                    { model | currentTime = Time t }
+
+                reachedEnd =
+                    isReachedEnd currentPosition
 
                 newModel =
-                    if isReachedEnd then
-                        rollback model
+                    if reachedEnd then
+                        rollback currentPosition
+
                     else
-                        { model | currentTime = Time t }
+                        currentPosition
 
                 cmd =
                     let
-                        seekToStartPoint = seek (unwrapTime newModel.currentTime)
+                        seekToStartPoint =
+                            seek (unwrapTime newModel.currentTime)
                     in
-                    case (isReachedEnd, loopEnabled model) of
-                        (True, True) ->
+                    case ( reachedEnd, loopEnabled model ) of
+                        ( True, True ) ->
                             Cmd.batch
                                 [ seekToStartPoint
                                 , P.play ()
                                 ]
-                        (True, False) -> seekToStartPoint
+
+                        ( True, False ) ->
+                            seekToStartPoint
+
                         _ ->
                             Cmd.none
             in

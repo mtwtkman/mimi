@@ -7,17 +7,13 @@ import AudioPlayer
         , Time(..)
         , Url(..)
         , defaultStartPoint
-        , initModel
         , rollback
+        , unwrapDuration
         )
 import Expect
 import Test exposing (..)
-import TestUtil.Transform exposing (fixDuration, setEndOnly, setSectionRange, setStartOnly, unsetSection)
-
-
-model : Time -> Model
-model dur =
-    initModel (Name "a") (Url "b") |> fixDuration dur
+import TestUtil.Fuzzer exposing (durationFixedModel)
+import TestUtil.Transform exposing (setEndOnly, setSectionRange, setStartOnly, unsetSection)
 
 
 suite : Test
@@ -39,24 +35,21 @@ rollbackToDefaultStartPointSpec =
         t =
             doTest defaultStartPoint
     in
-    [ test "section is not set" <|
-        \_ ->
+    [ fuzz durationFixedModel "section is not set" <|
+        \model ->
             let
                 noSectionModel =
-                    unsetSection <| model (Time 10.0)
+                    unsetSection model
             in
             t noSectionModel
-    , test "section is set as endonly" <|
-        \_ ->
+    , fuzz durationFixedModel "section is set as endonly" <|
+        \model ->
             let
                 dur =
-                    10.0
-
-                m =
-                    model (Time dur)
+                    unwrapDuration model
 
                 endOnlyModel =
-                    setEndOnly (Time (dur - 1.0)) m
+                    setEndOnly (Time (dur - 0.001)) model
             in
             t endOnlyModel
     ]
@@ -64,42 +57,36 @@ rollbackToDefaultStartPointSpec =
 
 rollbackToSetStartPointSpec : List Test
 rollbackToSetStartPointSpec =
-    [ test "section is set as startonly" <|
-        \_ ->
+    [ fuzz durationFixedModel "section is set as startonly" <|
+        \model ->
             let
                 dur =
-                    10.1
+                    unwrapDuration model
 
                 s =
-                    Time (dur - 3.4)
-
-                m =
-                    model (Time dur)
+                    Time (dur - 0.001)
 
                 startOnlyModel =
-                    setStartOnly s m
+                    setStartOnly s model
             in
             doTest s startOnlyModel
-    , test "section range is set" <|
-        \_ ->
+    , fuzz durationFixedModel "section range is set" <|
+        \model ->
             let
                 dur =
-                    11.2
-
-                m =
-                    model (Time dur)
+                    unwrapDuration model
 
                 s =
-                    dur - 4.3
+                    dur - 0.003
 
                 e =
-                    s + 1.1
+                    s + 0.001
 
                 ts =
                     Time s
 
                 sectionRangeModel =
-                    setSectionRange ts (Time e) m
+                    setSectionRange ts (Time e) model
             in
             doTest ts sectionRangeModel
     ]

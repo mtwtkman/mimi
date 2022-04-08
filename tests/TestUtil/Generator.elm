@@ -18,6 +18,7 @@ import Random
 import Random.Char exposing (ascii, unicode)
 import Random.Extra exposing (bool, maybe)
 import Random.String exposing (rangeLengthString, string)
+import TestUtil.Transform exposing (fixDuration)
 
 
 loop : Random.Generator Bool
@@ -94,3 +95,11 @@ section dur =
 initialModel : Random.Generator Model
 initialModel =
     Random.map2 initModel name url
+
+
+durationFixModel : Random.Generator Model
+durationFixModel =
+    Random.map2
+        fixDuration
+        duration
+        initialModel

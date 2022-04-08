@@ -10,7 +10,7 @@ module TestUtil.Transform exposing
     , play
     , resetSource
     , resolveError
-    , seek
+    , setCurrentTime
     , setEndOnly
     , setLoop
     , setSectionRange
@@ -104,8 +104,8 @@ changePlaybackRate playbackRate model =
     { model | playbackRate = playbackRate }
 
 
-seek : Time -> Model -> Model
-seek t model =
+setCurrentTime : Time -> Model -> Model
+setCurrentTime t model =
     { model | currentTime = t }
 
 

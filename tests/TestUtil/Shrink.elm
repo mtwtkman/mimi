@@ -2,7 +2,8 @@ module TestUtil.Shrink exposing (..)
 
 import AudioPlayer
     exposing
-        ( Name(..)
+        ( Model
+        , Name(..)
         , Time(..)
         , Url(..)
         )
@@ -22,3 +23,8 @@ name (Name n) =
 url : Shrinker Url
 url (Url u) =
     Shrink.map Url (Shrink.string u)
+
+
+model : Shrinker Model
+model =
+    Shrink.noShrink
